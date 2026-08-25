@@ -57,6 +57,10 @@
   @apply after:pointer-events-none after:absolute after:inset-s-0 after:bottom-0 after:hidden after:h-32 after:w-full after:rounded-b-2xl after:bg-[linear-gradient(180deg,transparent_10%,var(--background)_70%)] md:after:block;
 }
 
+@utility shadow-ambient {
+  box-shadow: 0 10px 30px -10px rgba(0, 105, 72, 0.05), 0 4px 10px -5px rgba(0, 105, 72, 0.02);
+}
+
 /* styles.css */
 .CollapsibleContent {
   overflow: hidden;

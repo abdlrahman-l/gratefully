@@ -13,7 +13,7 @@ export const Route = createRootRouteWithContext<{
 }>()({
   component: () => {
     return (
-      <>
+      <main className='mx-auto min-h-screen w-full max-w-md px-4 pt-6 pb-32 overflow-y-auto'>
         <NavigationProgress />
         <Outlet />
         <BottomNavbar />
@@ -24,7 +24,7 @@ export const Route = createRootRouteWithContext<{
             <TanStackRouterDevtools position='bottom-right' />
           </>
         )}
-      </>
+      </main>
     )
   },
   notFoundComponent: NotFoundError,
