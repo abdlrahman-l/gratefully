@@ -1,22 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/')({
-    component: RouteComponent,
+  component: RouteComponent,
 })
 
 function RouteComponent() {
-    return (
-        <div className="pt-8 px-4 text-center">
+  return (
+    <div className='container px-4 pt-8 text-center'>
+      <h1 className='mb-2 text-4xl font-bold'>You are home.</h1>
 
-            <h1 className="text-4xl font-bold mb-2">You are home.</h1>
+      <p className='text-muted-foreground'>Welcome to your sanctuary.</p>
 
-            <p className="text-muted-foreground">
-                Welcome to your sanctuary.
-            </p>
-
-            {/* Spacer to push content up */}
-            <div className="h-40" />
-
-        </div>
-    )
+      {/* Spacer to push content up */}
+      <div className='h-40' />
+    </div>
+  )
 }

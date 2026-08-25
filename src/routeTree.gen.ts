@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as GratefulRouteImport } from './routes/grateful'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
 import { Route as errors500RouteImport } from './routes/(errors)/500'
@@ -20,6 +21,11 @@ import { Route as errors401RouteImport } from './routes/(errors)/401'
 const GratefulRoute = GratefulRouteImport.update({
   id: '/grateful',
   path: '/grateful',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -55,6 +61,7 @@ const errors401Route = errors401RouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/grateful': typeof GratefulRoute
   '/401': typeof errors401Route
   '/403': typeof errors403Route
@@ -64,6 +71,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/grateful': typeof GratefulRoute
   '/401': typeof errors401Route
   '/403': typeof errors403Route
@@ -74,6 +82,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/grateful': typeof GratefulRoute
   '/(errors)/401': typeof errors401Route
   '/(errors)/403': typeof errors403Route
@@ -83,12 +92,21 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/grateful' | '/401' | '/403' | '/404' | '/500' | '/503'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/grateful'
+    | '/401'
+    | '/403'
+    | '/404'
+    | '/500'
+    | '/503'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/grateful' | '/401' | '/403' | '/404' | '/500' | '/503'
+  to: '/' | '/auth' | '/grateful' | '/401' | '/403' | '/404' | '/500' | '/503'
   id:
     | '__root__'
     | '/'
+    | '/auth'
     | '/grateful'
     | '/(errors)/401'
     | '/(errors)/403'
@@ -99,6 +117,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
   GratefulRoute: typeof GratefulRoute
   errors401Route: typeof errors401Route
   errors403Route: typeof errors403Route
@@ -114,6 +133,13 @@ declare module '@tanstack/react-router' {
       path: '/grateful'
       fullPath: '/grateful'
       preLoaderRoute: typeof GratefulRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -163,6 +189,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
   GratefulRoute: GratefulRoute,
   errors401Route: errors401Route,
   errors403Route: errors403Route,

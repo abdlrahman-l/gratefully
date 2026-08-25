@@ -44,12 +44,12 @@
   --color-outline-variant: #bccac0;
 
   /* --- Typography --- */
-  --font-h1: "Plus Jakarta Sans", sans-serif;
-  --font-h2: "Plus Jakarta Sans", sans-serif;
-  --font-body-lg: "Manrope", sans-serif;
-  --font-body-md: "Manrope", sans-serif;
-  --font-label: "Manrope", sans-serif;
-  --font-quote: "Newsreader", serif;
+  --font-h1: 'Plus Jakarta Sans', sans-serif;
+  --font-h2: 'Plus Jakarta Sans', sans-serif;
+  --font-body-lg: 'Manrope', sans-serif;
+  --font-body-md: 'Manrope', sans-serif;
+  --font-label: 'Manrope', sans-serif;
+  --font-quote: 'Newsreader', serif;
   --muted: oklch(0.968 0.007 247.896);
   --muted-foreground: oklch(0.554 0.046 257.417);
   --accent: oklch(0.968 0.007 247.896);

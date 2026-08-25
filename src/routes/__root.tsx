@@ -11,9 +11,18 @@ import BottomNavbar from '@/features/layouts/bottom-navbar'
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
 }>()({
+  head: () => ({
+    scripts: [
+      {
+        src: 'https://accounts.google.com/gsi/client',
+        async: true,
+        defer: true,
+      },
+    ],
+  }),
   component: () => {
     return (
-      <main className='mx-auto min-h-screen w-full max-w-md px-4 pt-6 pb-32 overflow-y-auto'>
+      <main className='mx-auto flex min-h-screen w-full max-w-md'>
         <NavigationProgress />
         <Outlet />
         <BottomNavbar />
