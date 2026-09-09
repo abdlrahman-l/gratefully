@@ -49,12 +49,17 @@ describe('useAuthStore', () => {
     expect(useAuthStoreAfterReload.getState().auth.accessToken).toBe('')
   })
 
-  it('updates the signed-in user via setUser', async () => {
+  it('persists the signed-in user so a new store instance reads it back', async () => {
     const useAuthStore = await importAuthStore()
 
     useAuthStore.getState().auth.setUser({ ...sampleUser })
 
     expect(useAuthStore.getState().auth.user).toEqual(sampleUser)
+
+    vi.resetModules()
+    const useAuthStoreAfterReload = await importAuthStore()
+
+    expect(useAuthStoreAfterReload.getState().auth.user).toEqual(sampleUser)
   })
 
   it('reset clears user and access token and drops persistence', async () => {

@@ -1,5 +1,9 @@
 import { type QueryClient } from '@tanstack/react-query'
-import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
+import {
+  createRootRouteWithContext,
+  Outlet,
+  redirect,
+} from '@tanstack/react-router'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { Toaster } from '@/components/ui/sonner'
@@ -7,10 +11,18 @@ import { NavigationProgress } from '@/components/navigation-progress'
 import { GeneralError } from '@/features/errors/general-error'
 import { NotFoundError } from '@/features/errors/not-found-error'
 import BottomNavbar from '@/features/layouts/bottom-navbar'
+import { useAuthStore } from '@/stores/auth-store'
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
 }>()({
+  beforeLoad: ({ location }) => {
+    const { accessToken } = useAuthStore.getState().auth
+
+    if (location.pathname !== '/auth' && !accessToken) {
+      throw redirect({ to: '/auth' })
+    }
+  },
   head: () => ({
     scripts: [
       {

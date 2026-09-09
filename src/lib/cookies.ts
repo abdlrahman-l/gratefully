@@ -15,7 +15,14 @@ export function getCookie(name: string): string | undefined {
   const parts = value.split(`; ${name}=`)
   if (parts.length === 2) {
     const cookieValue = parts.pop()?.split(';').shift()
-    return cookieValue
+    if (cookieValue === undefined) return undefined
+
+    try {
+      return decodeURIComponent(cookieValue)
+    } catch {
+      // Return legacy/unencoded cookie values as-is.
+      return cookieValue
+    }
   }
   return undefined
 }
@@ -30,7 +37,7 @@ export function setCookie(
 ): void {
   if (typeof document === 'undefined') return
 
-  document.cookie = `${name}=${value}; path=/; max-age=${maxAge}`
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}`
 }
 
 /**
