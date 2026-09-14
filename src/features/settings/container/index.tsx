@@ -12,13 +12,10 @@ import {
   Globe2Icon,
   InfoIcon,
   LogOutIcon,
-  MonitorIcon,
-  PaletteIcon,
   ShieldCheckIcon,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
-import { useTheme } from '@/context/theme-provider'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,7 +38,6 @@ import {
 } from '@/components/ui/sheet'
 
 type Language = SupportedLanguage
-type Appearance = 'system' | 'light' | 'dark'
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
@@ -115,20 +111,14 @@ function SelectorOption({
 }
 
 export function SettingsContainer() {
-  const { theme, setTheme } = useTheme()
   const { t } = useTranslation()
   const language = getCurrentLanguage()
   const [languageSheetOpen, setLanguageSheetOpen] = useState(false)
-  const [appearanceSheetOpen, setAppearanceSheetOpen] = useState(false)
   const setSelectedLanguage = async (nextLanguage: Language) => {
     await changeLanguage(nextLanguage)
     setLanguageSheetOpen(false)
   }
 
-  const setSelectedAppearance = (nextAppearance: Appearance) => {
-    setTheme(nextAppearance)
-    setAppearanceSheetOpen(false)
-  }
 
   return (
     <main className='flex flex-col gap-7 px-4 pt-2 pb-28'>
@@ -174,13 +164,6 @@ export function SettingsContainer() {
                 : t('settings.english')
             }
             onClick={() => setLanguageSheetOpen(true)}
-          />
-          <div className='ml-16 border-t border-outline-variant/20' />
-          <SettingsRow
-            icon={PaletteIcon}
-            label={t('settings.appearance')}
-            value={t(`settings.${theme}`)}
-            onClick={() => setAppearanceSheetOpen(true)}
           />
         </div>
       </section>
@@ -305,35 +288,6 @@ export function SettingsContainer() {
         </SheetContent>
       </Sheet>
 
-      <Sheet open={appearanceSheetOpen} onOpenChange={setAppearanceSheetOpen}>
-        <SheetContent side='bottom' className='rounded-t-3xl px-4 pb-8'>
-          <SheetHeader className='px-0 pt-2'>
-            <SheetTitle className='font-h2 text-lg'>
-              {t('settings.chooseAppearance')}
-            </SheetTitle>
-          </SheetHeader>
-          <RadioGroup
-            value={theme}
-            onValueChange={(value) =>
-              setSelectedAppearance(value as Appearance)
-            }
-            aria-label={t('settings.chooseAppearance')}
-          >
-            <SelectorOption checked={theme === 'system'} value='system'>
-              <span className='flex items-center gap-2'>
-                <MonitorIcon className='size-4' aria-hidden />
-                {t('settings.system')}
-              </span>
-            </SelectorOption>
-            <SelectorOption checked={theme === 'light'} value='light'>
-              {t('settings.light')}
-            </SelectorOption>
-            <SelectorOption checked={theme === 'dark'} value='dark'>
-              {t('settings.dark')}
-            </SelectorOption>
-          </RadioGroup>
-        </SheetContent>
-      </Sheet>
     </main>
   )
 }
