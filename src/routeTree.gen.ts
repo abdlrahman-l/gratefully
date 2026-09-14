@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as JourneyRouteImport } from './routes/journey'
 import { Route as GratefulRouteImport } from './routes/grateful'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
@@ -18,6 +19,11 @@ import { Route as errors404RouteImport } from './routes/(errors)/404'
 import { Route as errors403RouteImport } from './routes/(errors)/403'
 import { Route as errors401RouteImport } from './routes/(errors)/401'
 
+const JourneyRoute = JourneyRouteImport.update({
+  id: '/journey',
+  path: '/journey',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GratefulRoute = GratefulRouteImport.update({
   id: '/grateful',
   path: '/grateful',
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/grateful': typeof GratefulRoute
+  '/journey': typeof JourneyRoute
   '/401': typeof errors401Route
   '/403': typeof errors403Route
   '/404': typeof errors404Route
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/grateful': typeof GratefulRoute
+  '/journey': typeof JourneyRoute
   '/401': typeof errors401Route
   '/403': typeof errors403Route
   '/404': typeof errors404Route
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/grateful': typeof GratefulRoute
+  '/journey': typeof JourneyRoute
   '/(errors)/401': typeof errors401Route
   '/(errors)/403': typeof errors403Route
   '/(errors)/404': typeof errors404Route
@@ -96,18 +105,29 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/grateful'
+    | '/journey'
     | '/401'
     | '/403'
     | '/404'
     | '/500'
     | '/503'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/grateful' | '/401' | '/403' | '/404' | '/500' | '/503'
+  to:
+    | '/'
+    | '/auth'
+    | '/grateful'
+    | '/journey'
+    | '/401'
+    | '/403'
+    | '/404'
+    | '/500'
+    | '/503'
   id:
     | '__root__'
     | '/'
     | '/auth'
     | '/grateful'
+    | '/journey'
     | '/(errors)/401'
     | '/(errors)/403'
     | '/(errors)/404'
@@ -119,6 +139,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   GratefulRoute: typeof GratefulRoute
+  JourneyRoute: typeof JourneyRoute
   errors401Route: typeof errors401Route
   errors403Route: typeof errors403Route
   errors404Route: typeof errors404Route
@@ -128,6 +149,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/journey': {
+      id: '/journey'
+      path: '/journey'
+      fullPath: '/journey'
+      preLoaderRoute: typeof JourneyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/grateful': {
       id: '/grateful'
       path: '/grateful'
@@ -191,6 +219,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   GratefulRoute: GratefulRoute,
+  JourneyRoute: JourneyRoute,
   errors401Route: errors401Route,
   errors403Route: errors403Route,
   errors404Route: errors404Route,
