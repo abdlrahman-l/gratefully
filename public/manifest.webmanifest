@@ -1,0 +1,17 @@
+{
+  "name": "Gratefully — Gratitude Journal",
+  "short_name": "Gratefully",
+  "description": "A calm, private journal for recording the moments you are grateful for.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fffaf5",
+  "theme_color": "#fffaf5",
+  "icons": [
+    {
+      "src": "/images/leaf-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
