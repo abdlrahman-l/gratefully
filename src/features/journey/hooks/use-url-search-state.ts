@@ -6,6 +6,7 @@ type SearchState = Record<string, string | undefined>
 type UseUrlSearchStateReturn<T extends SearchState> = {
   states: T | null
   updateKey: (key: keyof T, value: string) => void
+  reset: () => void
   debouncedStates: T | null
   isReady: boolean
   query: SearchState
@@ -32,8 +33,10 @@ export function useUrlSearchState<T extends SearchState>(
     select: (state) => state.location.search as SearchState,
   })
   const [states, setStates] = useState<T | null>(null)
+  const [isReady, setIsReady] = useState(false)
   const isHydrated = useRef(false)
   const isFirstDebounce = useRef(true)
+  const isResetting = useRef(false)
   const debouncedStates = useDebounce(states, delay)
 
   useEffect(() => {
@@ -49,10 +52,15 @@ export function useUrlSearchState<T extends SearchState>(
 
     setStates(initialStates)
     isHydrated.current = true
+    setIsReady(true)
   }, [defaultValues, query])
 
   useEffect(() => {
     if (!isHydrated.current || !debouncedStates) return
+    if (isResetting.current) {
+      isResetting.current = false
+      return
+    }
     if (isFirstDebounce.current) {
       isFirstDebounce.current = false
       return
@@ -93,11 +101,38 @@ export function useUrlSearchState<T extends SearchState>(
     }))
   }
 
+  const reset = () => {
+    isResetting.current = true
+    setStates({ ...defaultValues })
+
+    const nextSearch = { ...query }
+    let hasChanged = false
+
+    Object.keys(defaultValues).forEach((key) => {
+      if (key in nextSearch) {
+        delete nextSearch[key]
+        hasChanged = true
+      }
+    })
+
+    if (hasChanged) {
+      const navigateSearch = navigate as unknown as (options: {
+        search: SearchState
+        replace?: boolean
+      }) => void
+      navigateSearch({
+        search: nextSearch,
+        replace: true,
+      })
+    }
+  }
+
   return {
     states,
     updateKey,
+    reset,
     debouncedStates,
-    isReady: isHydrated.current,
+    isReady,
     query,
   }
 }

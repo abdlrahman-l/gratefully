@@ -10,6 +10,7 @@ type JourneyFiltersProps = {
   filterDate: string
   onQueryChange: (value: string) => void
   onDateChange: (value: string) => void
+  onReset: () => void
 }
 
 export function JourneyFilters({
@@ -17,6 +18,7 @@ export function JourneyFilters({
   filterDate,
   onQueryChange,
   onDateChange,
+  onReset,
 }: JourneyFiltersProps) {
   const { t } = useTranslation()
 
@@ -41,17 +43,18 @@ export function JourneyFilters({
             onDateChange(date ? format(date, 'yyyy-MM-dd') : '')
           }
         />
-        {filterDate && (
-          <Button
-            type='button'
-            variant='ghost'
-            className='h-12 shrink-0 rounded-2xl px-3 text-outline hover:bg-primary/10 hover:text-primary'
-            onClick={() => onDateChange('')}
-          >
-            {t('common.clear')}
-          </Button>
-        )}
       </div>
+
+      {(query || filterDate) && (
+        <Button
+          type='button'
+          variant='ghost'
+          className='h-12 shrink-0 rounded-2xl px-3 text-outline hover:bg-primary/10 hover:text-primary'
+          onClick={onReset}
+        >
+          {t('common.clear')}
+        </Button>
+      )}
     </div>
   )
 }

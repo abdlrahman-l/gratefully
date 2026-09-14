@@ -12,7 +12,7 @@ import { INITIAL_ENTRIES, type GratefullyEntry } from '@/features/journey/types'
 export function JourneyContainer() {
   const { t } = useTranslation()
   const [entries, setEntries] = useState(INITIAL_ENTRIES)
-  const { states, debouncedStates, updateKey } = useUrlSearchState({
+  const { states, debouncedStates, updateKey, reset } = useUrlSearchState({
     query: '',
     date: '',
   })
@@ -79,6 +79,7 @@ export function JourneyContainer() {
         filterDate={filterDate}
         onQueryChange={(value) => updateKey('query', value)}
         onDateChange={(value) => updateKey('date', value)}
+        onReset={reset}
       />
 
       {filteredEntries.length === 0 ? (

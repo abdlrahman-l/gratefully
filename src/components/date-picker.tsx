@@ -62,6 +62,10 @@ export function DatePicker({
           selected={selected}
           onSelect={onSelect}
           className='rounded-2xl bg-transparent p-4'
+          classNames={{
+            day_button:
+              'aria-selected:bg-primary aria-selected:text-primary-foreground aria-selected:hover:bg-primary/90 aria-selected:hover:text-primary-foreground',
+          }}
           disabled={(date: Date) =>
             date > endOfDay(new Date()) ||
             date < startOfDay(new Date(1900, 0, 1))

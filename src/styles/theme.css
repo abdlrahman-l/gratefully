@@ -8,6 +8,7 @@
   --popover-foreground: oklch(0.129 0.042 264.695);
   /* Primary */
   --primary: #006948;
+  --primary-foreground: #ffffff;
   --color-primary-container: #00855d;
 
   /* Secondary */
