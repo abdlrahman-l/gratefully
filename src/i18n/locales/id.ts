@@ -56,6 +56,62 @@ export const id = {
     wisdom: 'Jika kamu bersyukur, niscaya Aku akan menambah [nikmat] kepadamu…',
     wisdomSource: '- QS. Ibrahim: 7',
     wisdomStreak: 'Streak {{count}} hari',
+    wisdomCard: {
+      label: 'Ayat tentang rasa syukur',
+      showVerse: 'Tampilkan {{verse}}',
+      slides: {
+        ibrahim: {
+          ayat: 'QS. Ibrahim 14:7',
+          copy: 'Jika kamu bersyukur, niscaya Aku akan menambah (nikmat) kepadamu.',
+          theme: 'Nikmat bertambah',
+        },
+        baqarahRemember: {
+          ayat: 'QS. Al-Baqarah 2:152',
+          copy: 'Bersyukurlah kepada-Ku dan janganlah kamu mengingkari (nikmat)-Ku.',
+          theme: 'Mengingat Allah',
+        },
+        luqman: {
+          ayat: 'QS. Luqman 31:12',
+          copy: 'Barang siapa bersyukur, sesungguhnya dia bersyukur untuk dirinya sendiri.',
+          theme: 'Syukur untuk diri',
+        },
+        nahlGifts: {
+          ayat: 'QS. An-Nahl 16:78',
+          copy: 'Dia memberimu pendengaran, penglihatan dan hati nurani, agar kamu bersyukur.',
+          theme: 'Menyadari nikmat',
+        },
+        nahlProvision: {
+          ayat: 'QS. An-Nahl 16:114',
+          copy: 'Makanlah dari rezeki yang telah diberikan Allah kepadamu ... dan syukurilah nikmat Allah.',
+          theme: 'Rezeki',
+        },
+        saba: {
+          ayat: "QS. Saba' 34:13",
+          copy: 'Sedikit sekali dari hamba-hamba-Ku yang bersyukur.',
+          theme: 'Refleksi',
+        },
+        zumar: {
+          ayat: 'QS. Az-Zumar 39:66',
+          copy: 'Sembahlah Allah dan jadilah termasuk orang-orang yang bersyukur.',
+          theme: 'Ibadah',
+        },
+        mulk: {
+          ayat: 'QS. Al-Mulk 67:23',
+          copy: 'Dia menjadikan pendengaran, penglihatan dan hati untukmu. Sedikit sekali kamu bersyukur.',
+          theme: 'Kesadaran',
+        },
+        baqarahProvision: {
+          ayat: 'QS. Al-Baqarah 2:172',
+          copy: 'Makanlah dari rezeki yang baik yang Kami berikan kepadamu dan bersyukurlah kepada Allah.',
+          theme: 'Rezeki',
+        },
+        naml: {
+          ayat: 'QS. An-Naml 27:19',
+          copy: 'Ya Tuhanku, anugerahkanlah aku ilham untuk tetap mensyukuri nikmat-Mu...',
+          theme: 'Doa syukur',
+        },
+      },
+    },
   },
   journey: {
     title: 'Perjalanan Syukurmu',

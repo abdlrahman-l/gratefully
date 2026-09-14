@@ -112,7 +112,7 @@ export const GratefulContainer = () => {
   }
 
   return (
-    <div className='container flex flex-col gap-12'>
+    <div className='container flex flex-col gap-8'>
       <WisdomCard />
       <JournalInput
         key={`${editingEntry?.id ?? 'new'}-${formVersion}`}

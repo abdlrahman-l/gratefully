@@ -56,6 +56,62 @@ export const en = {
     wisdom: 'If you are grateful, I will surely increase you [in favor]…',
     wisdomSource: '- QS. Ibrahim: 7',
     wisdomStreak: '{{count}} Day Streak',
+    wisdomCard: {
+      label: 'Verses about gratitude',
+      showVerse: 'Show {{verse}}',
+      slides: {
+        ibrahim: {
+          ayat: 'QS. Ibrahim 14:7',
+          copy: 'If you are grateful, I will surely increase you in favor.',
+          theme: 'Growing blessings',
+        },
+        baqarahRemember: {
+          ayat: 'QS. Al-Baqarah 2:152',
+          copy: 'So remember Me; I will remember you. And be grateful to Me and do not deny Me.',
+          theme: 'Remembering Allah',
+        },
+        luqman: {
+          ayat: 'QS. Luqman 31:12',
+          copy: 'Whoever is grateful is grateful for the benefit of himself.',
+          theme: 'Gratitude for yourself',
+        },
+        nahlGifts: {
+          ayat: 'QS. An-Nahl 16:78',
+          copy: 'He gave you hearing, sight, and hearts so that you might be grateful.',
+          theme: 'Recognizing blessings',
+        },
+        nahlProvision: {
+          ayat: 'QS. An-Nahl 16:114',
+          copy: 'Eat from the lawful and good things Allah has provided for you, and be grateful for Allah’s blessings.',
+          theme: 'Provision',
+        },
+        saba: {
+          ayat: "QS. Saba' 34:13",
+          copy: 'Very few of My servants are truly grateful.',
+          theme: 'Reflection',
+        },
+        zumar: {
+          ayat: 'QS. Az-Zumar 39:66',
+          copy: 'Rather, worship Allah and be among the grateful.',
+          theme: 'Worship',
+        },
+        mulk: {
+          ayat: 'QS. Al-Mulk 67:23',
+          copy: 'He gave you hearing, sight, and hearts. Yet little are you grateful.',
+          theme: 'Awareness',
+        },
+        baqarahProvision: {
+          ayat: 'QS. Al-Baqarah 2:172',
+          copy: 'Eat from the good things We have provided for you and be grateful to Allah.',
+          theme: 'Provision',
+        },
+        naml: {
+          ayat: 'QS. An-Naml 27:19',
+          copy: 'My Lord, inspire me to always be thankful for Your blessings...',
+          theme: 'Prayer of gratitude',
+        },
+      },
+    },
   },
   journey: {
     title: 'Your Gratefully Journey',
