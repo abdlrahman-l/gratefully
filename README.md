@@ -1,6 +1,16 @@
-# Shadcn Admin Dashboard
+# Gratefully
 
-Admin Dashboard UI crafted with Shadcn and Vite. Built with responsiveness and accessibility in mind.
+Gratefully is a local-first gratitude journal: entries are stored in IndexedDB and synchronized to the signed-in user's Google Drive app-data storage.
+
+## Learning guide
+
+Read [`docs/LEARNING_GUIDE.md`](docs/LEARNING_GUIDE.md) for a project-specific explanation of the stack, Google OAuth, IndexedDB data model, Drive synchronization, conflict strategy, trade-offs, and suggested learning exercises.
+
+---
+
+## Dashboard UI foundation
+
+The UI foundation was crafted with Shadcn and Vite, with responsiveness and accessibility in mind.
 
 ![alt text](public/images/shadcn-admin.png)
 
