@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { format, parseISO } from 'date-fns'
 import type { GratitudeEntry } from '@/types/gratitude'
 import { HeartIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { DatePicker } from '@/components/date-picker'
 
 interface JournalInputProps {
   editingEntry?: GratitudeEntry
@@ -43,11 +45,11 @@ export function JournalInput({
       >
         <label className='mb-3 flex flex-col gap-1.5 font-label text-sm font-medium text-outline'>
           Entry date
-          <input
-            className='h-9 rounded-md border border-outline-variant/30 bg-transparent px-3 text-on-surface outline-none focus:border-primary'
-            type='date'
-            value={date}
-            onChange={(event) => setDate(event.target.value)}
+          <DatePicker
+            selected={date ? parseISO(date) : undefined}
+            onSelect={(selectedDate) =>
+              setDate(selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '')
+            }
           />
         </label>
         <Textarea

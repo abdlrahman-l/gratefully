@@ -1,6 +1,8 @@
+import { format, parseISO } from 'date-fns'
 import type { GratitudeEntry } from '@/types/gratitude'
 import { CalendarIcon, PencilIcon, Trash2Icon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { DatePicker } from '@/components/date-picker'
 
 interface HistoryFeedProps {
   entries: GratitudeEntry[]
@@ -20,30 +22,36 @@ export function HistoryFeed({
   onFilterDateChange,
 }: HistoryFeedProps) {
   return (
-    <section className='flex flex-col gap-4'>
+    <section className='flex flex-col gap-4 pb-24'>
       <div className='flex flex-wrap items-center justify-between gap-3'>
         <h2 className='font-h2 text-xl font-semibold text-on-surface'>
           Recent Moments
         </h2>
-        <label className='flex items-center gap-2 font-label text-sm text-outline'>
-          Filter by date
-          <input
-            className='h-8 rounded-md border border-outline-variant/30 bg-transparent px-2 text-on-surface outline-none focus:border-primary'
-            type='date'
-            value={filterDate}
-            onChange={(event) => onFilterDateChange(event.target.value)}
-          />
-          {filterDate && (
-            <Button
-              size='sm'
-              type='button'
-              variant='ghost'
-              onClick={() => onFilterDateChange('')}
-            >
-              Clear
-            </Button>
-          )}
-        </label>
+        <div className='flex w-full flex-col items-start gap-2 sm:w-auto sm:flex-row sm:items-center'>
+          <span className='font-label text-sm font-medium text-outline'>
+            Filter by date
+          </span>
+          <div className='flex w-full items-center gap-2 sm:w-auto'>
+            <DatePicker
+              selected={filterDate ? parseISO(filterDate) : undefined}
+              placeholder='All dates'
+              onSelect={(date) =>
+                onFilterDateChange(date ? format(date, 'yyyy-MM-dd') : '')
+              }
+            />
+            {filterDate && (
+              <Button
+                size='sm'
+                type='button'
+                variant='ghost'
+                className='shrink-0 rounded-lg text-outline hover:bg-primary/10 hover:text-primary'
+                onClick={() => onFilterDateChange('')}
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
       <div className='flex flex-col gap-4'>
         {isLoading ? (
