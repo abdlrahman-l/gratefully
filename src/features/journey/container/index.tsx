@@ -37,13 +37,13 @@ import {
 } from '@/components/ui/sheet'
 import { Textarea } from '@/components/ui/textarea'
 
-export type GratitudeEntry = {
+export type GratefullyEntry = {
   id: string
   date: string
   content: string
 }
 
-const INITIAL_ENTRIES: GratitudeEntry[] = [
+const INITIAL_ENTRIES: GratefullyEntry[] = [
   {
     id: '2026-09-14',
     date: '2026-09-14',
@@ -117,10 +117,10 @@ function JourneyEmptyState({ searchActive }: { searchActive: boolean }) {
 }
 
 interface JourneyEntryProps {
-  entry: GratitudeEntry
-  onOpen: (entry: GratitudeEntry) => void
-  onEdit: (entry: GratitudeEntry) => void
-  onDelete: (entry: GratitudeEntry) => void
+  entry: GratefullyEntry
+  onOpen: (entry: GratefullyEntry) => void
+  onEdit: (entry: GratefullyEntry) => void
+  onDelete: (entry: GratefullyEntry) => void
 }
 
 function JourneyEntry({ entry, onOpen, onEdit, onDelete }: JourneyEntryProps) {
@@ -178,11 +178,11 @@ export function JourneyContainer() {
   const language = getCurrentLanguage()
   const [entries, setEntries] = useState(INITIAL_ENTRIES)
   const [query, setQuery] = useState('')
-  const [selectedEntry, setSelectedEntry] = useState<GratitudeEntry | null>(
+  const [selectedEntry, setSelectedEntry] = useState<GratefullyEntry | null>(
     null
   )
-  const [editingEntry, setEditingEntry] = useState<GratitudeEntry | null>(null)
-  const [deleteEntry, setDeleteEntry] = useState<GratitudeEntry | null>(null)
+  const [editingEntry, setEditingEntry] = useState<GratefullyEntry | null>(null)
+  const [deleteEntry, setDeleteEntry] = useState<GratefullyEntry | null>(null)
   const [editContent, setEditContent] = useState('')
 
   const filteredEntries = useMemo(() => {
@@ -195,7 +195,7 @@ export function JourneyContainer() {
   }, [entries, query])
 
   const groupedEntries = useMemo(() => {
-    return filteredEntries.reduce<Record<string, GratitudeEntry[]>>(
+    return filteredEntries.reduce<Record<string, GratefullyEntry[]>>(
       (groups, entry) => {
         const month = formatMonth(entry.date, language)
         groups[month] = [...(groups[month] ?? []), entry]
@@ -205,7 +205,7 @@ export function JourneyContainer() {
     )
   }, [filteredEntries, language])
 
-  const openEdit = (entry: GratitudeEntry) => {
+  const openEdit = (entry: GratefullyEntry) => {
     setSelectedEntry(null)
     setEditingEntry(entry)
     setEditContent(entry.content)

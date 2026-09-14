@@ -7,7 +7,7 @@ import {
   updateEntry,
 } from '@/db/entries.repository'
 import { initializeSyncMetadata } from '@/db/metadata.repository'
-import type { GratitudeEntry } from '@/types/gratitude'
+import type { GratefullyEntry } from '@/types/gratefully'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { HistoryFeed } from '@/features/grateful/components/history-feed'
@@ -16,9 +16,9 @@ import { WisdomCard } from '@/features/grateful/components/wisdom-card'
 
 export const GratefulContainer = () => {
   const { t } = useTranslation()
-  const [entries, setEntries] = useState<GratitudeEntry[]>([])
+  const [entries, setEntries] = useState<GratefullyEntry[]>([])
   const [filterDate, setFilterDate] = useState('')
-  const [editingEntry, setEditingEntry] = useState<GratitudeEntry>()
+  const [editingEntry, setEditingEntry] = useState<GratefullyEntry>()
   const [formVersion, setFormVersion] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)

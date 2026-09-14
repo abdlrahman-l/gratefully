@@ -1,4 +1,4 @@
-const DATABASE_NAME = 'gratitude-journal'
+const DATABASE_NAME = 'gratefully-journal'
 const DATABASE_VERSION = 1
 
 let databasePromise: Promise<IDBDatabase> | undefined
@@ -35,13 +35,13 @@ export function openDatabase(): Promise<IDBDatabase> {
       databasePromise = undefined
       reject(
         request.error ??
-          new Error('Unable to open the gratitude journal database.')
+          new Error('Unable to open the gratefully journal database.')
       )
     }
 
     request.onblocked = () => {
       databasePromise = undefined
-      reject(new Error('Unable to upgrade the gratitude journal database.'))
+      reject(new Error('Unable to upgrade the gratefully journal database.'))
     }
   })
 

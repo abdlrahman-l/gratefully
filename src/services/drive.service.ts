@@ -13,7 +13,7 @@ import {
 
 const DRIVE_API_URL = 'https://www.googleapis.com/drive/v3'
 const DRIVE_UPLOAD_URL = 'https://www.googleapis.com/upload/drive/v3'
-const DATABASE_FILE_NAME = 'gratitude_db.json'
+const DATABASE_FILE_NAME = 'gratefully_db.json'
 const DATABASE_MIME_TYPE = 'application/json'
 
 export class DriveServiceError extends Error {
@@ -241,7 +241,7 @@ function createMultipartBody(
   database: JournalDatabase,
   includeAppDataParent: boolean
 ): { boundary: string; body: string } {
-  const boundary = `gratitude-db-${crypto.randomUUID()}`
+  const boundary = `gratefully-db-${crypto.randomUUID()}`
   const metadata = JSON.stringify({
     name: DATABASE_FILE_NAME,
     mimeType: DATABASE_MIME_TYPE,
@@ -295,7 +295,7 @@ export async function readDatabase(fileId?: string): Promise<JournalDatabase> {
   if (!id)
     throw new DriveServiceError(
       'NOT_FOUND',
-      'The gratitude database file was not found.',
+      'The gratefully database file was not found.',
       404
     )
 

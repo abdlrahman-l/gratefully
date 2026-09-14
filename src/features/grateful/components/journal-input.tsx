@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
-import type { GratitudeEntry } from '@/types/gratitude'
+import type { GratefullyEntry } from '@/types/gratefully'
 import { HeartIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { DatePicker } from '@/components/date-picker'
 
 interface JournalInputProps {
-  editingEntry?: GratitudeEntry
+  editingEntry?: GratefullyEntry
   isSaving: boolean
   onCancelEdit: () => void
   onSave: (input: { date: string; content: string }) => Promise<void>

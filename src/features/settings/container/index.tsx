@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import {
@@ -36,6 +36,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
+import { useAuthStore } from '@/stores/auth-store'
 
 type Language = SupportedLanguage
 
@@ -114,6 +115,11 @@ export function SettingsContainer() {
   const { t } = useTranslation()
   const language = getCurrentLanguage()
   const [languageSheetOpen, setLanguageSheetOpen] = useState(false)
+
+  const user = useAuthStore((state) => state.auth.user)
+  const name = user?.name ?? 'there'
+  const initials = name.slice(0, 2).toUpperCase()
+
   const setSelectedLanguage = async (nextLanguage: Language) => {
     await changeLanguage(nextLanguage)
     setLanguageSheetOpen(false)
@@ -136,16 +142,17 @@ export function SettingsContainer() {
         <div className='rounded-2xl border border-outline-variant/20 bg-card p-4 shadow-ambient'>
           <div className='flex items-center gap-3'>
             <Avatar className='size-12 border border-primary/10'>
+              <AvatarImage className='bg-primary/10 font-label text-sm font-semibold text-primary' src={user?.picture} alt={`${user?.name}'s profile`} />
               <AvatarFallback className='bg-primary/10 font-label text-sm font-semibold text-primary'>
-                AR
+                {initials}
               </AvatarFallback>
             </Avatar>
             <div className='min-w-0'>
               <p className='truncate font-label text-sm font-semibold text-foreground'>
-                Abdul Rahman
+                { user?.name}
               </p>
               <p className='mt-0.5 truncate font-body-md text-sm text-muted-foreground'>
-                abdul@example.com
+                {user?.email}
               </p>
             </div>
           </div>
@@ -223,7 +230,7 @@ export function SettingsContainer() {
               <InfoIcon className='size-5' aria-hidden />
             </span>
             <span className='flex-1 font-label text-sm font-semibold text-foreground'>
-              {t('settings.aboutGratitude')}
+              {t('settings.aboutGratefully')}
             </span>
           </div>
           <div className='ml-16 border-t border-outline-variant/20' />

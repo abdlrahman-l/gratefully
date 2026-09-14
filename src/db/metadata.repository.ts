@@ -1,6 +1,6 @@
 import { openDatabase } from '@/db/db'
 import { requestToPromise } from '@/db/request'
-import type { SyncMetadata } from '@/types/gratitude'
+import type { SyncMetadata } from '@/types/gratefully'
 
 const SYNC_METADATA_KEY = 'sync' as const
 const SCHEMA_VERSION = 1

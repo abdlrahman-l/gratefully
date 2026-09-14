@@ -1,6 +1,6 @@
 import { format, parseISO } from 'date-fns'
 import { getCurrentLanguage } from '@/i18n'
-import type { GratitudeEntry } from '@/types/gratitude'
+import type { GratefullyEntry } from '@/types/gratefully'
 import { CalendarIcon, PencilIcon, Trash2Icon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { formatJournalDate } from '@/lib/date-locale'
@@ -8,11 +8,11 @@ import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/date-picker'
 
 interface HistoryFeedProps {
-  entries: GratitudeEntry[]
+  entries: GratefullyEntry[]
   filterDate: string
   isLoading: boolean
   onDelete: (id: string) => Promise<void>
-  onEdit: (entry: GratitudeEntry) => void
+  onEdit: (entry: GratefullyEntry) => void
   onFilterDateChange: (date: string) => void
 }
 

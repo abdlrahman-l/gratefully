@@ -1,4 +1,4 @@
-export type GratitudeEntry = {
+export type GratefullyEntry = {
   id: string
   date: string
   content: string
@@ -7,10 +7,10 @@ export type GratitudeEntry = {
   deletedAt: string | null
 }
 
-export type CreateGratitudeEntryInput = Pick<GratitudeEntry, 'date' | 'content'>
+export type CreateGratefullyEntryInput = Pick<GratefullyEntry, 'date' | 'content'>
 
-export type UpdateGratitudeEntryInput = Partial<
-  Pick<GratitudeEntry, 'date' | 'content'>
+export type UpdateGratefullyEntryInput = Partial<
+  Pick<GratefullyEntry, 'date' | 'content'>
 >
 
 export type SyncMetadata = {

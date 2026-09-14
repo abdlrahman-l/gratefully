@@ -17,7 +17,7 @@ export function DashboardContainer() {
   const { t } = useTranslation()
   const completedDays = week.filter(({ complete }) => complete).length
   const summary = [
-    { label: t('home.totalGratitude'), value: 124 },
+    { label: t('home.totalGratefully'), value: 124 },
     { label: t('home.thisMonth'), value: 18 },
   ]
   const localizedWeek = week.map(({ key, complete }) => ({

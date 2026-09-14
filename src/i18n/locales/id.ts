@@ -20,7 +20,7 @@ export const id = {
     encouragement: 'Terus istiqomah mencatat syukurmu',
     weeklyProgress: 'Progress syukur mingguan',
     writeToday: 'Catat Syukur Hari Ini',
-    totalGratitude: 'Total Syukur',
+    totalGratefully: 'Total Syukur',
     thisMonth: 'Bulan Ini',
     summary: 'Ringkasan syukur',
     week: {
@@ -97,7 +97,7 @@ export const id = {
     ownershipBody:
       'Kami tidak menyimpan catatan syukurmu di database aplikasi. Data disimpan di Google Drive milikmu.',
     about: 'Tentang',
-    aboutGratitude: 'Tentang Gratitude',
+    aboutGratefully: 'Tentang Gratefully',
     version: 'Versi',
     signOut: 'Keluar',
     signOutTitle: 'Keluar dari akun?',
