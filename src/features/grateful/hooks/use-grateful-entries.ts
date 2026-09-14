@@ -61,6 +61,16 @@ export function useGratefulEntries() {
     }
   }, [loadEntries, t])
 
+  useEffect(() => {
+    const refreshEntries = () => {
+      void loadEntries()
+    }
+    window.addEventListener('gratefully:sync-complete', refreshEntries)
+    return () => {
+      window.removeEventListener('gratefully:sync-complete', refreshEntries)
+    }
+  }, [loadEntries])
+
   const saveEntry = useCallback(
     async (input: EntryInput) => {
       setIsSaving(true)

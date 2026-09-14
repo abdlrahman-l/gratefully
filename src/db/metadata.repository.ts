@@ -23,15 +23,17 @@ export async function getSyncMetadata(): Promise<SyncMetadata | undefined> {
 }
 
 export async function initializeSyncMetadata(): Promise<SyncMetadata> {
-  const existingMetadata = await getSyncMetadata()
-  if (existingMetadata) return existingMetadata
-
-  const metadata = initialMetadata()
   const database = await openDatabase()
   const transaction = database.transaction('metadata', 'readwrite')
   const store = transaction.objectStore('metadata')
+  const existingMetadata = await requestToPromise(store.get(SYNC_METADATA_KEY))
 
-  await requestToPromise(store.add(metadata))
+  if (existingMetadata) return existingMetadata
+
+  const metadata = initialMetadata()
+  // Initialization can be requested by the journal and sync flows at once.
+  // The fixed metadata key therefore needs idempotent write semantics.
+  await requestToPromise(store.put(metadata))
   return metadata
 }
 
@@ -52,6 +54,10 @@ export async function updateSyncMetadata(
   return metadata
 }
 
-export function markLocalChange(): Promise<SyncMetadata> {
-  return updateSyncMetadata({ lastLocalChangeAt: new Date().toISOString() })
+export async function markLocalChange(): Promise<SyncMetadata> {
+  const metadata = await updateSyncMetadata({
+    lastLocalChangeAt: new Date().toISOString(),
+  })
+  window.dispatchEvent(new Event('gratefully:local-change'))
+  return metadata
 }

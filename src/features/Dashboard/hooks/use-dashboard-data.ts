@@ -93,10 +93,16 @@ export function useDashboardData() {
       }
     }
 
+    const refreshDashboardData = () => {
+      void loadDashboardData()
+    }
+
     void loadDashboardData()
+    window.addEventListener('gratefully:sync-complete', refreshDashboardData)
 
     return () => {
       isMounted = false
+      window.removeEventListener('gratefully:sync-complete', refreshDashboardData)
     }
   }, [])
 

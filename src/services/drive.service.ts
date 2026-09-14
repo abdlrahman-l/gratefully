@@ -1,3 +1,4 @@
+import type { DriveDatabase } from '@/sync/mapper'
 import type {
   DriveApiErrorResponse,
   DriveFile,
@@ -13,7 +14,8 @@ import {
 
 const DRIVE_API_URL = 'https://www.googleapis.com/drive/v3'
 const DRIVE_UPLOAD_URL = 'https://www.googleapis.com/upload/drive/v3'
-const DATABASE_FILE_NAME = 'gratefully_db.json'
+const DATABASE_FILE_NAME = 'gratitude_db.json'
+const GRATITUDE_DATABASE_FILE_NAME = DATABASE_FILE_NAME
 const DATABASE_MIME_TYPE = 'application/json'
 
 export class DriveServiceError extends Error {
@@ -213,9 +215,9 @@ function parseDatabase(value: unknown): JournalDatabase {
   return { last_updated: value.last_updated, entries }
 }
 
-export async function findDatabaseFile(): Promise<string | null> {
+async function findFileByName(name: string): Promise<DriveFile | null> {
   const query = new URLSearchParams({
-    q: `name = '${DATABASE_FILE_NAME}' and trashed = false`,
+    q: `name = '${name}' and trashed = false`,
     spaces: 'appDataFolder',
     fields: 'nextPageToken,files(id,name,mimeType,createdTime,modifiedTime)',
     pageSize: '100',
@@ -225,25 +227,28 @@ export async function findDatabaseFile(): Promise<string | null> {
   do {
     const response = await request(`${DRIVE_API_URL}/files?${query.toString()}`)
     const page = parseFileList(await readJsonResponse(response))
-    files.push(
-      ...(page.files ?? []).filter((file) => file.name === DATABASE_FILE_NAME)
-    )
+    files.push(...(page.files ?? []).filter((file) => file.name === name))
     if (page.nextPageToken) query.set('pageToken', page.nextPageToken)
     else query.delete('pageToken')
   } while (query.has('pageToken'))
 
   // If legacy duplicates exist, consistently reuse the oldest rather than creating another.
   files.sort((a, b) => (a.createdTime ?? '').localeCompare(b.createdTime ?? ''))
-  return files[0]?.id ?? null
+  return files[0] ?? null
+}
+
+export async function findDatabaseFile(): Promise<string | null> {
+  return (await findFileByName(DATABASE_FILE_NAME))?.id ?? null
 }
 
 function createMultipartBody(
-  database: JournalDatabase,
-  includeAppDataParent: boolean
+  database: unknown,
+  includeAppDataParent: boolean,
+  name = DATABASE_FILE_NAME
 ): { boundary: string; body: string } {
   const boundary = `gratefully-db-${crypto.randomUUID()}`
   const metadata = JSON.stringify({
-    name: DATABASE_FILE_NAME,
+    name,
     mimeType: DATABASE_MIME_TYPE,
     ...(includeAppDataParent ? { parents: ['appDataFolder'] } : {}),
   })
@@ -325,4 +330,76 @@ export async function writeDatabase(
   )
   parseDriveFile(await readJsonResponse(response))
   return cloneDatabase(updated)
+}
+
+export async function findGratitudeDatabaseFile(): Promise<DriveFile | null> {
+  return findFileByName(GRATITUDE_DATABASE_FILE_NAME)
+}
+
+export async function getGratitudeDatabaseFile(
+  fileId: string
+): Promise<DriveFile> {
+  const response = await request(
+    `${DRIVE_API_URL}/files/${encodeURIComponent(fileId)}?fields=id,name,mimeType,createdTime,modifiedTime`
+  )
+  const file = parseDriveFile(await readJsonResponse(response))
+  if (file.name !== GRATITUDE_DATABASE_FILE_NAME) {
+    throw new DriveServiceError(
+      'NOT_FOUND',
+      'The gratitude database file was not found.',
+      404
+    )
+  }
+  return file
+}
+
+export async function createGratitudeDatabaseFile(
+  database: DriveDatabase
+): Promise<DriveFile> {
+  const existing = await findGratitudeDatabaseFile()
+  if (existing) return existing
+
+  const { boundary, body } = createMultipartBody(
+    database,
+    true,
+    GRATITUDE_DATABASE_FILE_NAME
+  )
+  const response = await request(
+    `${DRIVE_UPLOAD_URL}/files?uploadType=multipart&fields=id,name,mimeType,createdTime,modifiedTime`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
+      body,
+    }
+  )
+  return parseDriveFile(await readJsonResponse(response))
+}
+
+export async function downloadGratitudeDatabase(
+  fileId: string
+): Promise<unknown> {
+  const response = await request(
+    `${DRIVE_API_URL}/files/${encodeURIComponent(fileId)}?alt=media`
+  )
+  return readJsonResponse(response)
+}
+
+export async function uploadGratitudeDatabase(
+  fileId: string,
+  database: DriveDatabase
+): Promise<DriveFile> {
+  const { boundary, body } = createMultipartBody(
+    database,
+    false,
+    GRATITUDE_DATABASE_FILE_NAME
+  )
+  const response = await request(
+    `${DRIVE_UPLOAD_URL}/files/${encodeURIComponent(fileId)}?uploadType=multipart&fields=id,name,mimeType,createdTime,modifiedTime`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
+      body,
+    }
+  )
+  return parseDriveFile(await readJsonResponse(response))
 }

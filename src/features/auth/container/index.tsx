@@ -10,6 +10,7 @@ const GOOGLE_SCOPE = [
   'openid',
   'email',
   'profile',
+  'https://www.googleapis.com/auth/drive.appdata',
   'https://www.googleapis.com/auth/drive.file',
 ].join(' ')
 

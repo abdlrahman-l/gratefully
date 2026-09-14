@@ -1,6 +1,7 @@
 import { openDatabase } from '@/db/db'
 import { markLocalChange } from '@/db/metadata.repository'
 import { requestToPromise } from '@/db/request'
+import { mergeEntries } from '@/sync/merge'
 import type {
   CreateGratefullyEntryInput,
   GratefullyEntry,
@@ -31,6 +32,75 @@ async function getEntryStore(
 export async function getAllEntries(): Promise<GratefullyEntry[]> {
   const store = await getEntryStore('readonly')
   return requestToPromise(store.getAll())
+}
+
+function transactionToPromise(transaction: IDBTransaction): Promise<void> {
+  return new Promise((resolve, reject) => {
+    transaction.oncomplete = () => resolve()
+    transaction.onerror = () =>
+      reject(transaction.error ?? new Error('IndexedDB transaction failed.'))
+    transaction.onabort = () =>
+      reject(transaction.error ?? new Error('IndexedDB transaction aborted.'))
+  })
+}
+
+function queueEntryUpserts(
+  store: IDBObjectStore,
+  entries: GratefullyEntry[]
+): void {
+  for (const entry of entries) {
+    store.put(entry)
+  }
+}
+
+/**
+ * Replaces an existing entry or inserts it when absent. Intended for imports
+ * and synchronization; user-created entries must use createEntry instead.
+ */
+export async function upsertEntry(entry: GratefullyEntry): Promise<void> {
+  await upsertEntries([entry])
+}
+
+/**
+ * Persists every supplied entry in one transaction, including tombstones.
+ * Entries are written unchanged so sync IDs and resolved timestamps are kept.
+ */
+export async function upsertEntries(entries: GratefullyEntry[]): Promise<void> {
+  const database = await openDatabase()
+  const transaction = database.transaction('entries', 'readwrite')
+  const store = transaction.objectStore('entries')
+
+  queueEntryUpserts(store, entries)
+  await transactionToPromise(transaction)
+}
+
+export async function mergeAndUpsertEntries(
+  remoteEntries: GratefullyEntry[]
+): Promise<GratefullyEntry[]> {
+  const database = await openDatabase()
+  const transaction = database.transaction('entries', 'readwrite')
+  const store = transaction.objectStore('entries')
+
+  const mergedEntries = await new Promise<GratefullyEntry[]>(
+    (resolve, reject) => {
+      const localEntriesRequest = store.getAll()
+
+      localEntriesRequest.onsuccess = () => {
+        const merged = mergeEntries(localEntriesRequest.result, remoteEntries)
+        queueEntryUpserts(store, merged)
+        resolve(merged)
+      }
+      localEntriesRequest.onerror = () => {
+        reject(
+          localEntriesRequest.error ??
+            new Error('Unable to read IndexedDB entries.')
+        )
+      }
+    }
+  )
+
+  await transactionToPromise(transaction)
+  return mergedEntries
 }
 
 export async function getActiveEntries(): Promise<GratefullyEntry[]> {
