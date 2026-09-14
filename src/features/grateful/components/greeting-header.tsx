@@ -7,7 +7,7 @@ export function GreetingHeader() {
   const initials = name.slice(0, 2).toUpperCase()
 
   return (
-    <header className='flex items-center gap-3 py-4'>
+    <header className='flex w-full items-center gap-3 px-4 py-4'>
       <Avatar className='size-12'>
         <AvatarImage src={user?.picture} alt={`${name}'s profile`} />
         <AvatarFallback>{initials}</AvatarFallback>
