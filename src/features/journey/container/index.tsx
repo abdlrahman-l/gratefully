@@ -1,5 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  getActiveEntries,
+  softDeleteEntry,
+  updateEntry,
+} from '@/db/entries.repository'
+import type { GratefullyEntry } from '@/types/gratefully'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 import { JourneyDialogs } from '@/features/journey/components/journey-dialogs'
 import { JourneyFilters } from '@/features/journey/components/journey-filters'
 import {
@@ -7,11 +14,11 @@ import {
   JourneyList,
 } from '@/features/journey/components/journey-list'
 import { useUrlSearchState } from '@/features/journey/hooks/use-url-search-state'
-import { INITIAL_ENTRIES, type GratefullyEntry } from '@/features/journey/types'
 
 export function JourneyContainer() {
   const { t } = useTranslation()
-  const [entries, setEntries] = useState(INITIAL_ENTRIES)
+  const [entries, setEntries] = useState<GratefullyEntry[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const { states, debouncedStates, updateKey, reset } = useUrlSearchState({
     query: '',
     date: '',
@@ -22,6 +29,39 @@ export function JourneyContainer() {
   const [editingEntry, setEditingEntry] = useState<GratefullyEntry | null>(null)
   const [deleteEntry, setDeleteEntry] = useState<GratefullyEntry | null>(null)
   const [editContent, setEditContent] = useState('')
+
+  const loadEntries = useCallback(async () => {
+    const loadedEntries = await getActiveEntries()
+    setEntries(
+      [...loadedEntries].sort((firstEntry, secondEntry) =>
+        secondEntry.date.localeCompare(firstEntry.date)
+      )
+    )
+  }, [])
+
+  useEffect(() => {
+    let isMounted = true
+
+    const initialize = async () => {
+      try {
+        await loadEntries()
+      } catch (error) {
+        if (isMounted) {
+          toast.error(
+            error instanceof Error ? error.message : t('grateful.loadError')
+          )
+        }
+      } finally {
+        if (isMounted) setIsLoading(false)
+      }
+    }
+
+    void initialize()
+
+    return () => {
+      isMounted = false
+    }
+  }, [loadEntries, t])
 
   const query = states?.query ?? ''
   const filterDate = states?.date ?? ''
@@ -43,24 +83,36 @@ export function JourneyContainer() {
     setEditContent(entry.content)
   }
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     const content = editContent.trim()
     if (!editingEntry || !content) return
-    setEntries((current) =>
-      current.map((entry) =>
-        entry.id === editingEntry.id ? { ...entry, content } : entry
+
+    try {
+      await updateEntry(editingEntry.id, { content })
+      await loadEntries()
+      setEditingEntry(null)
+      toast.success(t('grateful.updated'))
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t('grateful.saveError')
       )
-    )
-    setEditingEntry(null)
+    }
   }
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deleteEntry) return
-    setEntries((current) =>
-      current.filter((entry) => entry.id !== deleteEntry.id)
-    )
-    setSelectedEntry(null)
-    setDeleteEntry(null)
+
+    try {
+      await softDeleteEntry(deleteEntry.id)
+      await loadEntries()
+      setSelectedEntry(null)
+      setDeleteEntry(null)
+      toast.success(t('grateful.deleted'))
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t('grateful.deleteError')
+      )
+    }
   }
 
   return (
@@ -82,7 +134,11 @@ export function JourneyContainer() {
         onReset={reset}
       />
 
-      {filteredEntries.length === 0 ? (
+      {isLoading ? (
+        <p className='rounded-2xl border border-outline-variant/20 bg-surface-container-lowest px-6 py-12 text-center font-body-md text-sm text-outline shadow-ambient'>
+          {t('common.loading')}
+        </p>
+      ) : filteredEntries.length === 0 ? (
         <JourneyEmptyState
           searchActive={query.trim().length > 0 || filterDate.length > 0}
         />
