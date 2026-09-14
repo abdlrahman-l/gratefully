@@ -1,10 +1,13 @@
 import { useMemo, useState } from 'react'
+import { getCurrentLanguage } from '@/i18n'
 import {
   MoreVerticalIcon,
   PencilIcon,
   SearchIcon,
   Trash2Icon,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { formatJournalDate } from '@/lib/date-locale'
 import { cn } from '@/lib/utils'
 import {
   AlertDialog,
@@ -71,68 +74,43 @@ const INITIAL_ENTRIES: GratitudeEntry[] = [
   },
 ]
 
-const MONTH_NAMES = [
-  'Januari',
-  'Februari',
-  'Maret',
-  'April',
-  'Mei',
-  'Juni',
-  'Juli',
-  'Agustus',
-  'September',
-  'Oktober',
-  'November',
-  'Desember',
-]
-
-const SHORT_MONTH_NAMES = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'Mei',
-  'Jun',
-  'Jul',
-  'Agu',
-  'Sep',
-  'Okt',
-  'Nov',
-  'Des',
-]
-
-function getDateParts(date: string) {
-  const [year, month, day] = date.split('-').map(Number)
-  return { year, month, day }
+function formatMonth(
+  date: string,
+  language: ReturnType<typeof getCurrentLanguage>
+) {
+  return formatJournalDate(date, language, { month: 'long', year: 'numeric' })
 }
 
-function formatMonth(date: string) {
-  const { year, month } = getDateParts(date)
-  return `${MONTH_NAMES[month - 1]} ${year}`
+function formatShortDate(
+  date: string,
+  language: ReturnType<typeof getCurrentLanguage>
+) {
+  return formatJournalDate(date, language, { day: 'numeric', month: 'short' })
 }
 
-function formatShortDate(date: string) {
-  const { month, day } = getDateParts(date)
-  return `${day} ${SHORT_MONTH_NAMES[month - 1]}`
-}
-
-function formatLongDate(date: string) {
-  const { year, month, day } = getDateParts(date)
-  return `${day} ${MONTH_NAMES[month - 1]} ${year}`
+function formatLongDate(
+  date: string,
+  language: ReturnType<typeof getCurrentLanguage>
+) {
+  return formatJournalDate(date, language, {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
 }
 
 function JourneyEmptyState({ searchActive }: { searchActive: boolean }) {
+  const { t } = useTranslation()
+
   return (
     <div className='rounded-2xl border border-dashed border-outline-variant/40 bg-surface-container-lowest px-6 py-12 text-center shadow-ambient'>
       <h2 className='font-h2 text-lg font-semibold text-on-surface'>
-        {searchActive
-          ? 'Catatan tidak ditemukan'
-          : 'Belum ada perjalanan syukur'}
+        {searchActive ? t('journey.noResults') : t('journey.noJourney')}
       </h2>
       <p className='mt-2 font-body-md text-sm text-outline'>
         {searchActive
-          ? 'Coba gunakan kata kunci yang berbeda.'
-          : 'Catatan syukur yang kamu tulis akan muncul di sini.'}
+          ? t('journey.noResultsDescription')
+          : t('journey.noJourneyDescription')}
       </p>
     </div>
   )
@@ -146,6 +124,9 @@ interface JourneyEntryProps {
 }
 
 function JourneyEntry({ entry, onOpen, onEdit, onDelete }: JourneyEntryProps) {
+  const { t } = useTranslation()
+  const language = getCurrentLanguage()
+
   return (
     <div className='flex items-start gap-3 border-b border-outline-variant/20 py-4 first:pt-0 last:border-b-0 last:pb-0'>
       <button
@@ -154,7 +135,7 @@ function JourneyEntry({ entry, onOpen, onEdit, onDelete }: JourneyEntryProps) {
         onClick={() => onOpen(entry)}
       >
         <p className='font-label text-sm font-medium text-outline'>
-          {formatShortDate(entry.date)}
+          {formatShortDate(entry.date, language)}
         </p>
         <p className='mt-1.5 line-clamp-3 font-body-md text-sm leading-6 text-on-surface'>
           {entry.content}
@@ -167,7 +148,9 @@ function JourneyEntry({ entry, onOpen, onEdit, onDelete }: JourneyEntryProps) {
             variant='ghost'
             size='icon'
             className='mt-1 shrink-0 rounded-full text-outline hover:text-primary'
-            aria-label={`Aksi untuk catatan ${formatShortDate(entry.date)}`}
+            aria-label={t('journey.entryActions', {
+              date: formatShortDate(entry.date, language),
+            })}
           >
             <MoreVerticalIcon className='size-5' />
           </Button>
@@ -175,14 +158,14 @@ function JourneyEntry({ entry, onOpen, onEdit, onDelete }: JourneyEntryProps) {
         <DropdownMenuContent align='end' className='min-w-36'>
           <DropdownMenuItem onSelect={() => onEdit(entry)}>
             <PencilIcon />
-            Edit
+            {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuItem
             variant='destructive'
             onSelect={() => onDelete(entry)}
           >
             <Trash2Icon />
-            Delete
+            {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -191,6 +174,8 @@ function JourneyEntry({ entry, onOpen, onEdit, onDelete }: JourneyEntryProps) {
 }
 
 export function JourneyContainer() {
+  const { t } = useTranslation()
+  const language = getCurrentLanguage()
   const [entries, setEntries] = useState(INITIAL_ENTRIES)
   const [query, setQuery] = useState('')
   const [selectedEntry, setSelectedEntry] = useState<GratitudeEntry | null>(
@@ -212,13 +197,13 @@ export function JourneyContainer() {
   const groupedEntries = useMemo(() => {
     return filteredEntries.reduce<Record<string, GratitudeEntry[]>>(
       (groups, entry) => {
-        const month = formatMonth(entry.date)
+        const month = formatMonth(entry.date, language)
         groups[month] = [...(groups[month] ?? []), entry]
         return groups
       },
       {}
     )
-  }, [filteredEntries])
+  }, [filteredEntries, language])
 
   const openEdit = (entry: GratitudeEntry) => {
     setSelectedEntry(null)
@@ -251,10 +236,10 @@ export function JourneyContainer() {
     <div className='flex flex-col gap-6 px-4 pt-2 pb-28'>
       <header>
         <h1 className='font-h1 text-2xl font-bold tracking-tight text-on-surface'>
-          Perjalanan Syukurmu
+          {t('journey.title')}
         </h1>
         <p className='mt-2 font-body-md text-sm leading-6 text-outline'>
-          Lihat kembali hal-hal baik yang pernah kamu syukuri.
+          {t('journey.subtitle')}
         </p>
       </header>
 
@@ -264,8 +249,8 @@ export function JourneyContainer() {
           type='search'
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder='Cari catatan syukur...'
-          aria-label='Cari catatan syukur'
+          placeholder={t('journey.searchPlaceholder')}
+          aria-label={t('journey.searchLabel')}
           className='h-12 rounded-2xl border-outline-variant/30 bg-surface-container-lowest ps-10 shadow-ambient placeholder:text-outline/70 focus-visible:border-primary focus-visible:ring-primary/20'
         />
       </div>
@@ -310,10 +295,10 @@ export function JourneyContainer() {
             <>
               <SheetHeader className='px-0 pt-2 text-start'>
                 <SheetTitle className='font-h2 text-xl text-on-surface'>
-                  {formatLongDate(selectedEntry.date)}
+                  {formatLongDate(selectedEntry.date, language)}
                 </SheetTitle>
                 <SheetDescription className='sr-only'>
-                  Detail catatan syukur
+                  {t('journey.detail')}
                 </SheetDescription>
               </SheetHeader>
               <p className='font-body-md text-base leading-7 text-on-surface'>
@@ -357,16 +342,14 @@ export function JourneyContainer() {
         >
           <SheetHeader className='px-0 pt-2 text-start'>
             <SheetTitle className='font-h2 text-xl text-on-surface'>
-              Edit catatan syukur
+              {t('journey.editTitle')}
             </SheetTitle>
-            <SheetDescription>
-              Perbarui catatan syukurmu untuk hari ini.
-            </SheetDescription>
+            <SheetDescription>{t('journey.editDescription')}</SheetDescription>
           </SheetHeader>
           <Textarea
             value={editContent}
             onChange={(event) => setEditContent(event.target.value)}
-            aria-label='Isi catatan syukur'
+            aria-label={t('journey.contentLabel')}
             className='min-h-32 rounded-2xl border-outline-variant/30 bg-surface-container-lowest leading-6 focus-visible:border-primary focus-visible:ring-primary/20'
           />
           <SheetFooter className='flex-row p-0 pt-2'>
@@ -376,7 +359,7 @@ export function JourneyContainer() {
               className='flex-1 rounded-xl'
               onClick={() => setEditingEntry(null)}
             >
-              Batal
+              {t('common.cancel')}
             </Button>
             <Button
               type='button'
@@ -387,7 +370,7 @@ export function JourneyContainer() {
               disabled={!editContent.trim()}
               onClick={saveEdit}
             >
-              Simpan
+              {t('common.save')}
             </Button>
           </SheetFooter>
         </SheetContent>
@@ -399,20 +382,20 @@ export function JourneyContainer() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus catatan ini?</AlertDialogTitle>
+            <AlertDialogTitle>{t('journey.deleteTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Catatan syukur yang dihapus tidak dapat dikembalikan.
+              {t('journey.deleteDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDeleteEntry(null)}>
-              Batal
+              {t('common.cancel')}
             </AlertDialogCancel>
             <AlertDialogAction
               className='bg-destructive text-white hover:bg-destructive/90'
               onClick={confirmDelete}
             >
-              Hapus
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

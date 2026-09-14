@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 // import { useAuthStore } from '@/stores/auth-store'
 import { handleServerError } from '@/lib/handle-server-error'
 import { DirectionProvider } from './context/direction-provider'
+import './i18n'
 // Generated Routes
 import { routeTree } from './routeTree.gen'
 // Styles

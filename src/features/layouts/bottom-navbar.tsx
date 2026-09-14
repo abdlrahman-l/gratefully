@@ -1,23 +1,25 @@
 import React from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
 import { Home, Heart, BookOpen, Settings } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 
 interface NavItem {
-  label: string
+  translationKey: 'home' | 'grateful' | 'journey' | 'settings'
   to: string
   icon: React.ComponentType<{ className?: string; fill?: string }>
 }
 
 const navItems: NavItem[] = [
-  { label: 'Home', to: '/', icon: Home },
-  { label: 'Grateful', to: '/grateful', icon: Heart },
-  { label: 'Journey', to: '/journey', icon: BookOpen },
-  { label: 'Settings', to: '/settings', icon: Settings },
+  { translationKey: 'home', to: '/', icon: Home },
+  { translationKey: 'grateful', to: '/grateful', icon: Heart },
+  { translationKey: 'journey', to: '/journey', icon: BookOpen },
+  { translationKey: 'settings', to: '/settings', icon: Settings },
 ]
 
 const BottomNavbar = () => {
   const { pathname } = useLocation()
+  const { t } = useTranslation()
 
   if (pathname === '/auth') {
     return null
@@ -56,7 +58,7 @@ const BottomNavbar = () => {
                       : 'font-medium text-muted-foreground group-hover:text-foreground'
                   }`}
                 >
-                  {item.label}
+                  {t(`navigation.${item.translationKey}`)}
                 </span>
               </>
             )}

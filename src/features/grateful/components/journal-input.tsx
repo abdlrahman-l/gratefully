@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import type { GratitudeEntry } from '@/types/gratitude'
 import { HeartIcon } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { DatePicker } from '@/components/date-picker'
@@ -25,6 +26,7 @@ export function JournalInput({
   onCancelEdit,
   onSave,
 }: JournalInputProps) {
+  const { t } = useTranslation()
   const [content, setContent] = useState(editingEntry?.content ?? '')
   const [date, setDate] = useState(editingEntry?.date ?? getTodayDate)
 
@@ -44,7 +46,7 @@ export function JournalInput({
         onSubmit={handleSubmit}
       >
         <label className='mb-3 flex flex-col gap-1.5 font-label text-sm font-medium text-outline'>
-          Entry date
+          {t('grateful.entryDate')}
           <DatePicker
             selected={date ? parseISO(date) : undefined}
             onSelect={(selectedDate) =>
@@ -54,14 +56,14 @@ export function JournalInput({
         </label>
         <Textarea
           className='min-h-[120px] w-full resize-none border-none bg-transparent p-0 font-body-lg text-lg text-on-surface placeholder-outline shadow-none focus-visible:ring-0'
-          placeholder='What is one good thing that happened today?...'
+          placeholder={t('grateful.prompt')}
           value={content}
           onChange={(event) => setContent(event.target.value)}
         />
         <div className='mt-4 flex justify-end gap-2'>
           {editingEntry && (
             <Button type='button' variant='outline' onClick={onCancelEdit}>
-              Cancel
+              {t('common.cancel')}
             </Button>
           )}
           <Button
@@ -69,7 +71,7 @@ export function JournalInput({
             disabled={isSaving || !content.trim()}
             type='submit'
           >
-            {editingEntry ? 'Update entry' : 'Alhamdulillah, Save'}
+            {editingEntry ? t('grateful.update') : t('grateful.save')}
             <HeartIcon className='size-4' />
           </Button>
         </div>

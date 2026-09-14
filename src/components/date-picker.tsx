@@ -1,5 +1,7 @@
-import { endOfDay, format, startOfDay } from 'date-fns'
+import { endOfDay, startOfDay } from 'date-fns'
+import { getCurrentLanguage } from '@/i18n'
 import { Calendar as CalendarIcon, ChevronDownIcon } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -17,8 +19,12 @@ type DatePickerProps = {
 export function DatePicker({
   selected,
   onSelect,
-  placeholder = 'Pick a date',
+  placeholder,
 }: DatePickerProps) {
+  const { t } = useTranslation()
+  const language = getCurrentLanguage()
+  const datePlaceholder = placeholder ?? t('common.selectDate')
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -32,7 +38,13 @@ export function DatePicker({
             <CalendarIcon className='size-4' />
           </span>
           <span className='truncate'>
-            {selected ? format(selected, 'MMM d, yyyy') : placeholder}
+            {selected
+              ? new Intl.DateTimeFormat(language === 'id' ? 'id-ID' : 'en-US', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                }).format(selected)
+              : datePlaceholder}
           </span>
           <ChevronDownIcon
             className='ms-auto size-4 text-outline/70'

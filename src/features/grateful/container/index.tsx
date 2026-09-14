@@ -8,12 +8,14 @@ import {
 } from '@/db/entries.repository'
 import { initializeSyncMetadata } from '@/db/metadata.repository'
 import type { GratitudeEntry } from '@/types/gratitude'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { HistoryFeed } from '@/features/grateful/components/history-feed'
 import { JournalInput } from '@/features/grateful/components/journal-input'
 import { WisdomCard } from '@/features/grateful/components/wisdom-card'
 
 export const GratefulContainer = () => {
+  const { t } = useTranslation()
   const [entries, setEntries] = useState<GratitudeEntry[]>([])
   const [filterDate, setFilterDate] = useState('')
   const [editingEntry, setEditingEntry] = useState<GratitudeEntry>()
@@ -42,9 +44,7 @@ export const GratefulContainer = () => {
       } catch (error) {
         if (isMounted) {
           toast.error(
-            error instanceof Error
-              ? error.message
-              : 'Unable to load the local journal.'
+            error instanceof Error ? error.message : t('grateful.loadError')
           )
         }
       } finally {
@@ -57,7 +57,7 @@ export const GratefulContainer = () => {
     return () => {
       isMounted = false
     }
-  }, [loadEntries])
+  }, [loadEntries, t])
 
   const handleFilterDateChange = async (date: string) => {
     setFilterDate(date)
@@ -67,9 +67,7 @@ export const GratefulContainer = () => {
       await loadEntries(date || undefined)
     } catch (error) {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : 'Unable to filter journal entries.'
+        error instanceof Error ? error.message : t('grateful.filterError')
       )
     } finally {
       setIsLoading(false)
@@ -83,19 +81,17 @@ export const GratefulContainer = () => {
       if (editingEntry) {
         await updateEntry(editingEntry.id, input)
         setEditingEntry(undefined)
-        toast.success('Gratitude entry updated')
+        toast.success(t('grateful.updated'))
       } else {
         await createEntry(input)
-        toast.success('Gratitude entry saved')
+        toast.success(t('grateful.saved'))
       }
 
       setFormVersion((version) => version + 1)
       await loadEntries(filterDate || undefined)
     } catch (error) {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : 'Unable to save gratitude entry.'
+        error instanceof Error ? error.message : t('grateful.saveError')
       )
     } finally {
       setIsSaving(false)
@@ -107,12 +103,10 @@ export const GratefulContainer = () => {
       await softDeleteEntry(id)
       if (editingEntry?.id === id) setEditingEntry(undefined)
       await loadEntries(filterDate || undefined)
-      toast.success('Gratitude entry deleted')
+      toast.success(t('grateful.deleted'))
     } catch (error) {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : 'Unable to delete gratitude entry.'
+        error instanceof Error ? error.message : t('grateful.deleteError')
       )
     }
   }

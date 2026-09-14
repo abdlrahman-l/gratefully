@@ -1,6 +1,9 @@
 import { format, parseISO } from 'date-fns'
+import { getCurrentLanguage } from '@/i18n'
 import type { GratitudeEntry } from '@/types/gratitude'
 import { CalendarIcon, PencilIcon, Trash2Icon } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { formatJournalDate } from '@/lib/date-locale'
 import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/date-picker'
 
@@ -21,20 +24,23 @@ export function HistoryFeed({
   onEdit,
   onFilterDateChange,
 }: HistoryFeedProps) {
+  const { t } = useTranslation()
+  const language = getCurrentLanguage()
+
   return (
     <section className='flex flex-col gap-4 pb-24'>
       <div className='flex flex-wrap items-center justify-between gap-3'>
         <h2 className='font-h2 text-xl font-semibold text-on-surface'>
-          Recent Moments
+          {t('grateful.recentMoments')}
         </h2>
         <div className='flex w-full flex-col items-start gap-2 sm:w-auto sm:flex-row sm:items-center'>
           <span className='font-label text-sm font-medium text-outline'>
-            Filter by date
+            {t('grateful.filterByDate')}
           </span>
           <div className='flex w-full items-center gap-2 sm:w-auto'>
             <DatePicker
               selected={filterDate ? parseISO(filterDate) : undefined}
-              placeholder='All dates'
+              placeholder={t('grateful.allDates')}
               onSelect={(date) =>
                 onFilterDateChange(date ? format(date, 'yyyy-MM-dd') : '')
               }
@@ -47,7 +53,7 @@ export function HistoryFeed({
                 className='shrink-0 rounded-lg text-outline hover:bg-primary/10 hover:text-primary'
                 onClick={() => onFilterDateChange('')}
               >
-                Clear
+                {t('common.clear')}
               </Button>
             )}
           </div>
@@ -55,9 +61,9 @@ export function HistoryFeed({
       </div>
       <div className='flex flex-col gap-4'>
         {isLoading ? (
-          <p className='font-body-md text-outline'>Loading your journal…</p>
+          <p className='font-body-md text-outline'>{t('common.loading')}</p>
         ) : entries.length === 0 ? (
-          <p className='font-body-md text-outline'>No gratitude entries yet.</p>
+          <p className='font-body-md text-outline'>{t('grateful.noEntries')}</p>
         ) : (
           entries.map((entry) => (
             <div
@@ -67,11 +73,21 @@ export function HistoryFeed({
               <div className='flex items-center justify-between gap-3'>
                 <p className='flex items-center gap-1.5 font-label text-sm font-medium text-outline'>
                   <CalendarIcon className='size-4' />
-                  {entry.date}
+                  {formatJournalDate(entry.date, language, {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  })}
                 </p>
                 <div className='flex gap-1'>
                   <Button
-                    aria-label={`Edit entry from ${entry.date}`}
+                    aria-label={t('grateful.editAria', {
+                      date: formatJournalDate(entry.date, language, {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                      }),
+                    })}
                     size='icon'
                     type='button'
                     variant='ghost'
@@ -80,7 +96,13 @@ export function HistoryFeed({
                     <PencilIcon className='size-4' />
                   </Button>
                   <Button
-                    aria-label={`Delete entry from ${entry.date}`}
+                    aria-label={t('grateful.deleteAria', {
+                      date: formatJournalDate(entry.date, language, {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                      }),
+                    })}
                     size='icon'
                     type='button'
                     variant='ghost'

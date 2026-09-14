@@ -1,7 +1,9 @@
+
 import { useAuthStore } from '@/stores/auth-store'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 export function GreetingHeader() {
+
   const user = useAuthStore((state) => state.auth.user)
   const name = user?.name ?? 'there'
   const initials = name.slice(0, 2).toUpperCase()
