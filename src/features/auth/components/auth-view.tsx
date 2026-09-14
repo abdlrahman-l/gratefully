@@ -8,7 +8,7 @@ interface AuthViewProps {
 
 export function AuthView({ onGoogleSignIn, isLoading = false }: AuthViewProps) {
   return (
-    <div className='container flex h-full w-full flex-col items-center justify-center self-center text-center'>
+    <div className='container flex w-full flex-1 flex-col items-center justify-center self-center text-center'>
       {/* Decorative leaf icon badge */}
       <LeafLogo className='mb-8' />
 
@@ -23,7 +23,7 @@ export function AuthView({ onGoogleSignIn, isLoading = false }: AuthViewProps) {
       </p>
 
       {/* Google Login Action */}
-      <div className='mt-12 flex w-full justify-center'>
+      <div className='mt-12 flex w-full items-center justify-center'>
         <GoogleAuthButton onClick={onGoogleSignIn} isLoading={isLoading} />
       </div>
 

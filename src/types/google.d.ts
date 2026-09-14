@@ -13,6 +13,7 @@ declare global {
               error: google.accounts.oauth2.ErrorResponse
             ) => void
           }) => google.accounts.oauth2.TokenClient
+          revoke: (token: string, callback?: () => void) => void
         }
       }
     }
