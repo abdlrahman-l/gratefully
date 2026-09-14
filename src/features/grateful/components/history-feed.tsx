@@ -1,85 +1,60 @@
-import { format, parseISO } from 'date-fns'
 import { getCurrentLanguage } from '@/i18n'
 import type { GratefullyEntry } from '@/types/gratefully'
 import { CalendarIcon, PencilIcon, Trash2Icon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { formatJournalDate } from '@/lib/date-locale'
 import { Button } from '@/components/ui/button'
-import { DatePicker } from '@/components/date-picker'
 
 interface HistoryFeedProps {
   entries: GratefullyEntry[]
-  filterDate: string
+
   isLoading: boolean
   onDelete: (id: string) => Promise<void>
   onEdit: (entry: GratefullyEntry) => void
-  onFilterDateChange: (date: string) => void
 }
 
 export function HistoryFeed({
   entries,
-  filterDate,
+
   isLoading,
   onDelete,
   onEdit,
-  onFilterDateChange,
 }: HistoryFeedProps) {
   const { t } = useTranslation()
   const language = getCurrentLanguage()
 
   return (
-    <section className='flex flex-col gap-4 pb-24'>
-      <div className='flex flex-wrap items-center justify-between gap-3'>
-        <h2 className='font-h2 text-xl font-semibold text-on-surface'>
+    <section className='flex flex-col gap-4 pb-20 sm:gap-4 sm:pb-24'>
+      <div className='flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3'>
+        <h2 className='font-h2 text-base leading-tight font-semibold text-on-surface sm:text-xl'>
           {t('grateful.recentMoments')}
         </h2>
-        <div className='flex w-full flex-col items-start gap-2 sm:w-auto sm:flex-row sm:items-center'>
-          <span className='font-label text-sm font-medium text-outline'>
-            {t('grateful.filterByDate')}
-          </span>
-          <div className='flex w-full items-center gap-2 sm:w-auto'>
-            <DatePicker
-              selected={filterDate ? parseISO(filterDate) : undefined}
-              placeholder={t('grateful.allDates')}
-              onSelect={(date) =>
-                onFilterDateChange(date ? format(date, 'yyyy-MM-dd') : '')
-              }
-            />
-            {filterDate && (
-              <Button
-                size='sm'
-                type='button'
-                variant='ghost'
-                className='shrink-0 rounded-lg text-outline hover:bg-primary/10 hover:text-primary'
-                onClick={() => onFilterDateChange('')}
-              >
-                {t('common.clear')}
-              </Button>
-            )}
-          </div>
-        </div>
       </div>
-      <div className='flex flex-col gap-4'>
+      <div className='flex flex-col gap-2.5 sm:gap-4'>
         {isLoading ? (
-          <p className='font-body-md text-outline'>{t('common.loading')}</p>
+          <p className='rounded-xl bg-surface-container-lowest p-3.5 font-body-md text-sm text-outline shadow-ambient sm:rounded-2xl sm:p-5 sm:text-base'>
+            {t('common.loading')}
+          </p>
         ) : entries.length === 0 ? (
-          <p className='font-body-md text-outline'>{t('grateful.noEntries')}</p>
+          <p className='rounded-xl border border-dashed border-outline-variant/30 bg-surface-container-lowest p-4 font-body-md text-sm text-outline shadow-ambient sm:rounded-2xl sm:p-6 sm:text-base'>
+            {t('grateful.noEntries')}
+          </p>
         ) : (
           entries.map((entry) => (
             <div
               key={entry.id}
-              className='group flex flex-col gap-2 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest p-5 shadow-ambient transition-shadow duration-300 hover:shadow-md'
+              className='group flex flex-col gap-2.5 rounded-xl border border-outline-variant/10 bg-surface-container-lowest p-3.5 shadow-ambient transition-shadow duration-300 hover:shadow-md sm:gap-2 sm:rounded-2xl sm:p-5'
             >
-              <div className='flex items-center justify-between gap-3'>
-                <p className='flex items-center gap-1.5 font-label text-sm font-medium text-outline'>
-                  <CalendarIcon className='size-4' />
+              <div className='flex items-start justify-between gap-2 sm:items-center sm:gap-3'>
+                <p className='flex min-w-0 flex-1 items-center gap-1 pt-0.5 font-label text-[11px] leading-4 font-medium text-outline sm:pt-0 sm:text-sm'>
+                  <CalendarIcon className='size-3.5 shrink-0' />
                   {formatJournalDate(entry.date, language, {
                     day: 'numeric',
                     month: 'short',
                     year: 'numeric',
                   })}
                 </p>
-                <div className='flex gap-1'>
+                <div className='flex shrink-0 gap-0 sm:gap-1'>
                   <Button
                     aria-label={t('grateful.editAria', {
                       date: formatJournalDate(entry.date, language, {
@@ -88,6 +63,7 @@ export function HistoryFeed({
                         year: 'numeric',
                       }),
                     })}
+                    className='size-9 sm:size-9'
                     size='icon'
                     type='button'
                     variant='ghost'
@@ -103,6 +79,7 @@ export function HistoryFeed({
                         year: 'numeric',
                       }),
                     })}
+                    className='size-9 text-destructive/80 hover:bg-destructive/10 hover:text-destructive sm:size-9'
                     size='icon'
                     type='button'
                     variant='ghost'
@@ -112,7 +89,7 @@ export function HistoryFeed({
                   </Button>
                 </div>
               </div>
-              <p className='font-body-md text-base text-on-surface'>
+              <p className='font-body-md text-sm leading-6 wrap-break-word text-on-surface sm:text-base sm:leading-normal'>
                 {entry.content}
               </p>
             </div>

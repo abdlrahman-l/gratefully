@@ -118,6 +118,8 @@ export const id = {
     subtitle: 'Lihat kembali hal-hal baik yang pernah kamu syukuri.',
     searchPlaceholder: 'Cari catatan syukur...',
     searchLabel: 'Cari catatan syukur',
+    filterByDate: 'Filter berdasarkan tanggal',
+    allDates: 'Semua tanggal',
     noJourney: 'Belum ada perjalanan syukur',
     noJourneyDescription: 'Catatan syukur yang kamu tulis akan muncul di sini.',
     noResults: 'Catatan tidak ditemukan',

@@ -118,6 +118,8 @@ export const en = {
     subtitle: 'Look back at the good things you have been grateful for.',
     searchPlaceholder: 'Search gratefully entries...',
     searchLabel: 'Search gratefully entries',
+    filterByDate: 'Filter by date',
+    allDates: 'All dates',
     noJourney: 'No gratefully journey yet',
     noJourneyDescription: 'Your gratefully entries will appear here.',
     noResults: 'No entries found',

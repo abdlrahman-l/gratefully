@@ -32,7 +32,7 @@ export function DatePicker({
           type='button'
           variant='outline'
           data-empty={!selected}
-          className='h-11 w-full min-w-56 justify-start rounded-xl border-outline-variant/40 bg-surface-container-lowest px-3.5 text-start font-label text-sm font-medium shadow-none transition-colors hover:border-primary/50 hover:bg-surface-container-low focus-visible:border-primary focus-visible:ring-primary/20 data-[empty=true]:text-outline sm:w-60'
+          className='h-11 w-full min-w-56 justify-start rounded-xl border-outline-variant/40 bg-surface-container-lowest px-3.5 text-start font-label text-sm font-medium shadow-none transition-colors hover:border-primary/50 hover:bg-surface-container-low focus-visible:border-primary focus-visible:ring-primary/20 data-[empty=true]:text-outline'
         >
           <span className='flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary'>
             <CalendarIcon className='size-4' />

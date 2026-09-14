@@ -17,7 +17,7 @@ import { WisdomCard } from '@/features/grateful/components/wisdom-card'
 export const GratefulContainer = () => {
   const { t } = useTranslation()
   const [entries, setEntries] = useState<GratefullyEntry[]>([])
-  const [filterDate, setFilterDate] = useState('')
+
   const [editingEntry, setEditingEntry] = useState<GratefullyEntry>()
   const [formVersion, setFormVersion] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
@@ -59,21 +59,6 @@ export const GratefulContainer = () => {
     }
   }, [loadEntries, t])
 
-  const handleFilterDateChange = async (date: string) => {
-    setFilterDate(date)
-    setIsLoading(true)
-
-    try {
-      await loadEntries(date || undefined)
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : t('grateful.filterError')
-      )
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   const handleSave = async (input: { date: string; content: string }) => {
     setIsSaving(true)
 
@@ -88,7 +73,7 @@ export const GratefulContainer = () => {
       }
 
       setFormVersion((version) => version + 1)
-      await loadEntries(filterDate || undefined)
+      await loadEntries()
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : t('grateful.saveError')
@@ -102,7 +87,7 @@ export const GratefulContainer = () => {
     try {
       await softDeleteEntry(id)
       if (editingEntry?.id === id) setEditingEntry(undefined)
-      await loadEntries(filterDate || undefined)
+      await loadEntries()
       toast.success(t('grateful.deleted'))
     } catch (error) {
       toast.error(
@@ -123,11 +108,9 @@ export const GratefulContainer = () => {
       />
       <HistoryFeed
         entries={entries}
-        filterDate={filterDate}
         isLoading={isLoading}
         onDelete={handleDelete}
         onEdit={setEditingEntry}
-        onFilterDateChange={(date) => void handleFilterDateChange(date)}
       />
     </div>
   )
