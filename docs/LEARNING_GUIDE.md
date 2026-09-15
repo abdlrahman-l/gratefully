@@ -106,15 +106,13 @@ const GOOGLE_SCOPE = [
   'email',
   'profile',
   'https://www.googleapis.com/auth/drive.appdata',
-  'https://www.googleapis.com/auth/drive.file',
 ].join(' ')
 ```
 
 | Scope | Purpose in the current app |
 | --- | --- |
 | `openid`, `email`, `profile` | Lets the app identify and display the Google user. |
-| `drive.appdata` | Required for the app's `appDataFolder`, a hidden Google Drive area intended for application data. This is the important Drive scope for the current sync design. |
-| `drive.file` | Permission for files created/opened by the app. The current implementation stores its database in `appDataFolder`, so this may be redundant; confirm Google API behavior for your requirements before removing it. |
+| `drive.appdata` | Required for the app's `appDataFolder`, a hidden Google Drive area intended for application data. This is the only Drive scope required by the current sync design. |
 
 ### Where the session is stored
 
@@ -437,7 +435,6 @@ When either device syncs:
 - [ ] Add every development and production origin to its authorized JavaScript origins.
 - [ ] Enable the Google Drive API in the same Google Cloud project.
 - [ ] Configure `VITE_GOOGLE_CLIENT_ID` locally and in the deployment environment; never commit secrets.
-- [ ] Review whether `drive.file` is truly needed in addition to `drive.appdata`; request only required permissions.
 - [ ] Design re-authorization/token-expiry UX and test a Drive `401` response.
 - [ ] Add a Content Security Policy and XSS defenses before storing bearer tokens in JavaScript-readable storage.
 - [ ] Test sign-in, offline edits, reconnect sync, deletion propagation, malformed cloud JSON, and two-device conflicts.

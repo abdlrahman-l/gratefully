@@ -11,7 +11,6 @@ const GOOGLE_SCOPE = [
   'email',
   'profile',
   'https://www.googleapis.com/auth/drive.appdata',
-  'https://www.googleapis.com/auth/drive.file',
 ].join(' ')
 
 interface GoogleUserInfo {
