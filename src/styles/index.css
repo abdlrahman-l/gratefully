@@ -63,6 +63,20 @@
     0 4px 10px -5px rgba(0, 105, 72, 0.02);
 }
 
+@utility animate-streak-celebration {
+  animation: streak-celebration 2.8s ease-in-out infinite;
+}
+
+@keyframes streak-celebration {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg) scale(1);
+  }
+  50% {
+    transform: translateY(-0.5rem) rotate(1deg) scale(1.04);
+  }
+}
+
 /* styles.css */
 .CollapsibleContent {
   overflow: hidden;

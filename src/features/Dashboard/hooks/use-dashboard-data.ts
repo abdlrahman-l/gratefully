@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getActiveEntries } from '@/db/entries.repository'
 import type { GratefullyEntry } from '@/types/gratefully'
+import { calculateCurrentStreak } from '@/features/Dashboard/utils/streak'
 
 const WEEK_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
 
@@ -49,12 +50,7 @@ function getDashboardData(entries: GratefullyEntry[]): DashboardData {
     }
   })
 
-  let streakDays = 0
-  const streakDate = new Date(now)
-  while (entryDates.has(toDateKey(streakDate))) {
-    streakDays += 1
-    streakDate.setDate(streakDate.getDate() - 1)
-  }
+  const streakDays = calculateCurrentStreak(entryDates, now)
 
   return {
     totalEntries: entries.length,
@@ -98,11 +94,19 @@ export function useDashboardData() {
     }
 
     void loadDashboardData()
+    window.addEventListener('gratefully:local-change', refreshDashboardData)
     window.addEventListener('gratefully:sync-complete', refreshDashboardData)
 
     return () => {
       isMounted = false
-      window.removeEventListener('gratefully:sync-complete', refreshDashboardData)
+      window.removeEventListener(
+        'gratefully:local-change',
+        refreshDashboardData
+      )
+      window.removeEventListener(
+        'gratefully:sync-complete',
+        refreshDashboardData
+      )
     }
   }, [])
 
