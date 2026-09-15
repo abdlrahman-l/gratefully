@@ -19,34 +19,57 @@ describe('useAuthStore', () => {
     vi.resetModules()
   })
 
-  it('starts with an empty access token when nothing is persisted', async () => {
+  it('starts disconnected when nothing is persisted', async () => {
     const useAuthStore = await importAuthStore()
+    const { accessToken, expiresAt, status, user } =
+      useAuthStore.getState().auth
 
-    expect(useAuthStore.getState().auth.accessToken).toBe('')
-    expect(useAuthStore.getState().auth.user).toBeNull()
+    expect(accessToken).toBe('')
+    expect(expiresAt).toBeNull()
+    expect(status).toBe('unauthenticated')
+    expect(user).toBeNull()
   })
 
-  it('persists access token so a new store instance reads it back', async () => {
+  it('persists a valid access token and expiration together', async () => {
     const useAuthStore = await importAuthStore()
-    useAuthStore.getState().auth.setAccessToken('session-token')
+    const expiresAt = Date.now() + 3_600_000
+    useAuthStore.getState().auth.setCredentials('session-token', expiresAt)
 
     vi.resetModules()
     const useAuthStoreAfterReload = await importAuthStore()
+    const auth = useAuthStoreAfterReload.getState().auth
 
-    expect(useAuthStoreAfterReload.getState().auth.accessToken).toBe(
-      'session-token'
-    )
+    expect(auth.accessToken).toBe('session-token')
+    expect(auth.expiresAt).toBe(expiresAt)
+    expect(auth.status).toBe('authenticated')
   })
 
-  it('clears persisted access token when resetAccessToken is used', async () => {
+  it('does not restore an expired access token', async () => {
     const useAuthStore = await importAuthStore()
-    useAuthStore.getState().auth.setAccessToken('to-clear')
+    useAuthStore
+      .getState()
+      .auth.setCredentials('expired-token', Date.now() - 1_000)
+
+    vi.resetModules()
+    const auth = (await importAuthStore()).getState().auth
+
+    expect(auth.accessToken).toBe('')
+    expect(auth.expiresAt).toBeNull()
+    expect(auth.status).toBe('unauthenticated')
+  })
+
+  it('clears persisted access token and expiration together', async () => {
+    const useAuthStore = await importAuthStore()
+    useAuthStore
+      .getState()
+      .auth.setCredentials('to-clear', Date.now() + 3_600_000)
     useAuthStore.getState().auth.resetAccessToken()
 
     vi.resetModules()
-    const useAuthStoreAfterReload = await importAuthStore()
+    const auth = (await importAuthStore()).getState().auth
 
-    expect(useAuthStoreAfterReload.getState().auth.accessToken).toBe('')
+    expect(auth.accessToken).toBe('')
+    expect(auth.expiresAt).toBeNull()
   })
 
   it('persists the signed-in user so a new store instance reads it back', async () => {
@@ -62,20 +85,24 @@ describe('useAuthStore', () => {
     expect(useAuthStoreAfterReload.getState().auth.user).toEqual(sampleUser)
   })
 
-  it('reset clears user and access token and drops persistence', async () => {
+  it('reset clears user, access token, expiration, and persistence', async () => {
     const useAuthStore = await importAuthStore()
-    useAuthStore.getState().auth.setAccessToken('will-be-cleared')
+    useAuthStore
+      .getState()
+      .auth.setCredentials('will-be-cleared', Date.now() + 3_600_000)
     useAuthStore.getState().auth.setUser({ ...sampleUser })
 
     useAuthStore.getState().auth.reset()
 
     expect(useAuthStore.getState().auth.user).toBeNull()
     expect(useAuthStore.getState().auth.accessToken).toBe('')
+    expect(useAuthStore.getState().auth.expiresAt).toBeNull()
 
     vi.resetModules()
-    const useAuthStoreAfterReload = await importAuthStore()
+    const auth = (await importAuthStore()).getState().auth
 
-    expect(useAuthStoreAfterReload.getState().auth.user).toBeNull()
-    expect(useAuthStoreAfterReload.getState().auth.accessToken).toBe('')
+    expect(auth.user).toBeNull()
+    expect(auth.accessToken).toBe('')
+    expect(auth.expiresAt).toBeNull()
   })
 })

@@ -13,7 +13,7 @@ This guide explains the architecture currently implemented in this repository. I
 | UI | React 19, TypeScript, Tailwind CSS, shadcn/Radix UI | Component-based UI, type checking, and reusable accessible UI primitives. |
 | Build | Vite | Fast local development and production bundling. |
 | Routing | TanStack Router | Typed client-side routes. |
-| UI state | Zustand | Holds the current user and Google access token so non-React service code can read it. |
+| UI state | Zustand | Holds the current user, Google access token, expiration timestamp, and Drive authentication status so non-React service code can coordinate sync. |
 | Local persistence | Browser IndexedDB (native API) | Async, structured, durable browser storage; unlike `localStorage`, it is suitable for a growing collection of records. |
 | Cloud sync | Google Identity Services + Google Drive REST API | Lets users use their Google account and retain ownership of their data without a custom backend. |
 | Feedback | Sonner | Toast messages for sign-in and journal actions. |
@@ -25,7 +25,8 @@ src/
 ├── features/auth/          # Google sign-in screen and OAuth request
 ├── db/                     # IndexedDB schema and repositories
 ├── sync/                   # JSON mapping, conflict merge, sync orchestration
-├── services/drive.service.ts # Google Drive HTTP requests
+├── services/google-token.service.ts # GIS token lifecycle and concurrency control
+├── services/drive.service.ts # Authenticated Google Drive HTTP requests
 ├── hooks/use-sync.ts       # React lifecycle/event-based sync scheduler
 ├── stores/auth-store.ts    # Zustand auth state + cookie persistence
 └── types/                  # Shared TypeScript data contracts
@@ -44,12 +45,14 @@ flowchart TD
 
     User --> SignIn[Google sign-in button]
     SignIn --> GIS[Google Identity Services]
-    GIS --> Token[Short-lived OAuth access token]
-    Token --> AuthStore[Zustand auth store and browser cookie]
+    GIS --> Token[Short-lived OAuth access token plus expires_in]
+    Token --> TokenService[google-token.service]
+    TokenService --> AuthStore[Zustand auth store and browser cookies]
     AuthStore --> Scheduler
 
     Scheduler --> SyncService[syncWithGoogleDrive]
-    SyncService --> DriveAPI[Google Drive API]
+    SyncService --> TokenService
+    TokenService --> DriveAPI[Google Drive API with valid bearer token]
     DriveAPI --> AppData[appDataFolder / gratitude_db.json]
     SyncService --> Merge[Merge by entry ID and updatedAt]
     Merge --> IDB
@@ -79,24 +82,28 @@ The code is in [`src/features/auth/container/index.tsx`](../src/features/auth/co
 sequenceDiagram
     actor U as User
     participant A as AuthContainer
+    participant T as Google token service
     participant GIS as Google Identity Services
     participant UI as Google userinfo endpoint
     participant S as Zustand auth store
 
     U->>A: Click Continue with Google
-    A->>A: Read VITE_GOOGLE_CLIENT_ID
-    A->>GIS: Load gsi/client script if needed
-    A->>GIS: initTokenClient(client ID + scopes)
-    A->>GIS: requestAccessToken(prompt: consent)
+    A->>T: requestNewAccessToken(prompt: consent)
+    T->>T: Read VITE_GOOGLE_CLIENT_ID
+    T->>GIS: Load gsi/client script if needed
+    T->>GIS: Initialize shared token client once
+    T->>GIS: requestAccessToken(prompt: consent)
     GIS-->>U: Google consent popup
-    GIS-->>A: access_token and expires_in
+    GIS-->>T: access_token and expires_in
+    T->>S: Save token, expiresAt, and authenticated status
+    T-->>A: access_token
     A->>UI: GET /oauth2/v3/userinfo (Bearer token)
     UI-->>A: Google profile
-    A->>S: Save token and user details
+    A->>S: Save user details
     A-->>U: Navigate to /grateful
 ```
 
-The app dynamically loads `https://accounts.google.com/gsi/client`, creates an OAuth token client with `google.accounts.oauth2.initTokenClient`, and asks for a token with `requestAccessToken`.
+[`src/services/google-token.service.ts`](../src/services/google-token.service.ts) dynamically loads `https://accounts.google.com/gsi/client`, creates one OAuth token client with `google.accounts.oauth2.initTokenClient`, and asks for tokens with `requestAccessToken`. Both interactive sign-in and background Drive synchronization reuse this service.
 
 ### Requested scopes
 
@@ -118,16 +125,54 @@ const GOOGLE_SCOPE = [
 
 [`src/stores/auth-store.ts`](../src/stores/auth-store.ts) stores:
 
-- `auth-user`: serialized profile data, including an `exp` timestamp.
+- `auth-user`: serialized profile data, including the account identity and legacy `exp` value.
 - `thisisjustarandomstring`: the OAuth access token.
+- `access-token-expires-at`: the token expiration time in milliseconds since the Unix epoch.
 
-Both are stored using the project cookie helpers and mirrored in the Zustand store. [`src/utils/driveHelpers.ts`](../src/utils/driveHelpers.ts) is a small adapter that lets Drive service code access the current token outside React.
+These values are stored using the project cookie helpers and mirrored in the Zustand store. Token and expiration are written and cleared together through `setCredentials()` and `resetAccessToken()`. On upgrades from the previous format, the store can derive the initial expiration from `auth-user.exp`.
+
+The store also exposes a Drive authentication status:
+
+- `authenticated`: a valid token is available.
+- `reauthorizing`: GIS token acquisition is in progress.
+- `unauthenticated`: Drive authentication is unavailable; the local journal is still usable.
+- `initializing`: reserved for credential initialization that may become asynchronous later.
 
 ### What happens when the token expires?
 
-The expiration timestamp is saved, but the code does **not** currently check it before syncing or silently refresh the token. A Drive request may return `401`, which becomes a `DriveServiceError` with code `AUTHENTICATION`.
+[`src/services/google-token.service.ts`](../src/services/google-token.service.ts) owns the complete token lifecycle. `isAccessTokenValid()` requires both a non-empty token and an expiration timestamp, and applies a 60-second safety buffer:
 
-This is normal for the Google token-client approach: it provides an access token, not a long-lived token stored by the application. A robust next step would be to request a new access token before sync when it is near expiry, or when Drive returns `401`—while respecting Google’s user-interaction and consent rules.
+```ts
+Boolean(accessToken && expiresAt && Date.now() < expiresAt - 60_000)
+```
+
+A token inside that buffer is treated as expired so a Drive operation does not begin with a credential likely to expire mid-request. At application startup, the Zustand store removes stale token and expiration cookies while preserving `auth-user` and all IndexedDB data.
+
+Before each Drive request, `getValidAccessToken()` either returns the current valid token or requests a new one through GIS. Google supplies `expires_in`; the service stores `Date.now() + expires_in * 1000` rather than assuming a fixed lifetime.
+
+Multiple Drive operations may ask for a token simultaneously. They share one module-level in-flight promise, so only one GIS request is made and every waiting operation receives the same result. The reference is cleared after either success or failure.
+
+### Unexpected `401` responses
+
+A locally valid token can still be revoked or invalidated by Google. The authenticated request wrapper in [`src/services/drive.service.ts`](../src/services/drive.service.ts) handles this globally:
+
+```text
+Drive request returns 401
+→ clear accessToken and expiresAt
+→ acquire one new GIS token
+→ retry the original request exactly once
+→ if it is still 401, clear credentials and stop
+```
+
+Only `401` starts this recovery. A `403` means the request is authenticated but forbidden or missing permission, so it is reported as an API error without another token loop. A fetch failure is reported as a network error and leaves local data untouched.
+
+If GIS cannot reacquire a token—for example because the browser is offline, GIS cannot load, or Google requires interaction—the status becomes `unauthenticated`. Settings displays a **Reconnect Google** action that makes an interactive consent request. The existing user profile and local journal remain available.
+
+### Routing and local access
+
+[`src/routes/__root.tsx`](../src/routes/__root.tsx) uses the persisted user identity—not access-token presence—to decide whether this device has an established journal session. Consequently, an expired Drive credential does not redirect an existing user away from locally available journal screens while GIS is attempting reacquisition.
+
+Profile picture URLs are displayed through the existing Radix avatar components. If an image request fails, the initials fallback is shown; image failure does not participate in token retries or block authentication initialization.
 
 ### Security notes
 
@@ -135,7 +180,7 @@ This is normal for the Google token-client approach: it provides an access token
 - **Do not put a Google client secret in this frontend.** Browser code and Vite environment variables are visible to users.
 - Cookies set from JavaScript cannot be `HttpOnly`. Therefore an XSS vulnerability could expose the access token. Avoid untrusted HTML, keep dependencies current, and add a strict Content Security Policy when deploying.
 - The current token cookie appears to be persistent. Keeping bearer tokens only in memory reduces persistence but requires sign-in again after a reload. This is a security/usability trade-off to decide deliberately.
-- Sign-out must clear both the auth state and cookies. The Zustand store’s `reset()` does this; verify the sign-out component calls it.
+- Sign-out clears the user, token, expiration, status, and corresponding cookies through the Zustand store’s `reset()`. It does not delete the IndexedDB journal.
 
 ---
 
@@ -279,7 +324,11 @@ flowchart TD
     Start[Sync requested] --> Online{Browser online?}
     Online -- No --> Offline[Return SyncOfflineError]
     Online -- Yes --> ReadLocal[Read all local entries, including tombstones]
-    ReadLocal --> File{Known driveFileId still exists?}
+    ReadLocal --> Token{Stored token valid with 60-second buffer?}
+    Token -- No --> GIS[Acquire one shared in-flight GIS token]
+    Token -- Yes --> File{Known driveFileId still exists?}
+    GIS -- Success --> File
+    GIS -- Failure --> Disconnected[Stop cloud sync; keep local journal available]
     File -- Yes --> Download
     File -- No --> Search[Search appDataFolder for gratitude_db.json]
     Search --> Found{File found?}
@@ -303,12 +352,14 @@ flowchart TD
 
 It requests sync:
 
-- once after an access token becomes available (sign-in),
+- once after a persisted user account becomes available (sign-in or application reopen),
 - three seconds after a local create, update, or delete event (debounced),
 - when the browser comes back online,
 - when the document becomes visible again.
 
-The 3-second debounce prevents multiple writes while the user makes several changes close together. `syncWithGoogleDrive()` also uses an in-memory `activeSync` promise so concurrent triggers in the **same browser tab** share one in-flight request.
+The 3-second debounce prevents multiple writes while the user makes several changes close together. `syncWithGoogleDrive()` also uses an in-memory `activeSync` promise so concurrent triggers in the **same browser tab** share one in-flight sync. Separately, `google-token.service.ts` uses its own shared promise so concurrent Drive calls cannot open multiple GIS token requests.
+
+The scheduler checks browser connectivity before starting cloud work, but it does not control access to IndexedDB-backed screens. Local reads and writes happen independently of Drive authentication. Failed token acquisition, Drive errors, and offline status are sync concerns rather than reasons to make the journal unavailable.
 
 ### Remote file format
 
@@ -396,7 +447,7 @@ When either device syncs:
 | Remote storage | One complete JSON file | Fine for a small journal; becomes inefficient and contention-prone as entries grow. Consider chunked files or a backend later. |
 | Upload concurrency | One active sync per tab | Separate tabs/devices can still race. Drive ETags / `If-Match` or revision checks would detect conflicting remote writes. |
 | Metadata | File modified time is remembered | It is not yet used to avoid downloads or guard uploads. |
-| Token lifecycle | Persisted short-lived access token | The app needs a deliberate refresh/re-authentication experience after expiration. |
+| Token lifecycle | Persisted short-lived token plus expiration, automatic reacquisition, and one 401 retry | GIS may still require user interaction; when it does, sync becomes disconnected and Settings offers an explicit reconnect action. Browser-only GIS does not provide a server-side refresh token. |
 | Encryption | Plain JSON in IndexedDB and Drive | Google protects Drive access, but the application does not add end-to-end encryption. Client-side encryption requires careful key recovery design. |
 | Deletion retention | Tombstones retained forever | They keep sync correct, but the file can grow. Purge only after a deliberate multi-device retention policy. |
 
@@ -408,13 +459,14 @@ When either device syncs:
 2. [`src/db/db.ts`](../src/db/db.ts) — see the IndexedDB schema and migrations.
 3. [`src/db/entries.repository.ts`](../src/db/entries.repository.ts) — understand local CRUD and tombstones.
 4. [`src/db/metadata.repository.ts`](../src/db/metadata.repository.ts) — understand the local-change event and remembered Drive file details.
-5. [`src/features/auth/container/index.tsx`](../src/features/auth/container/index.tsx) — trace OAuth token acquisition.
-6. [`src/stores/auth-store.ts`](../src/stores/auth-store.ts) and [`src/utils/driveHelpers.ts`](../src/utils/driveHelpers.ts) — follow how Drive obtains the token.
-7. [`src/services/drive.service.ts`](../src/services/drive.service.ts) — inspect the REST calls and multipart upload implementation.
-8. [`src/sync/mapper.ts`](../src/sync/mapper.ts), [`src/sync/merge.ts`](../src/sync/merge.ts), and [`src/sync/normalize.ts`](../src/sync/normalize.ts) — learn transformations and conflict rules.
-9. [`src/sync/sync.service.ts`](../src/sync/sync.service.ts) — read the whole algorithm end-to-end.
-10. [`src/hooks/use-sync.ts`](../src/hooks/use-sync.ts) — see when React triggers synchronization.
-11. [`src/sync/mapper.test.ts`](../src/sync/mapper.test.ts) — see executable examples for mapping and tombstone merge behavior.
+5. [`src/features/auth/container/index.tsx`](../src/features/auth/container/index.tsx) — trace interactive sign-in and profile loading.
+6. [`src/stores/auth-store.ts`](../src/stores/auth-store.ts) — understand persisted credentials and authentication statuses.
+7. [`src/services/google-token.service.ts`](../src/services/google-token.service.ts) — follow validation, GIS acquisition, expiration storage, and concurrency protection.
+8. [`src/services/drive.service.ts`](../src/services/drive.service.ts) — inspect authenticated REST calls, bounded 401 recovery, and multipart uploads.
+9. [`src/sync/mapper.ts`](../src/sync/mapper.ts), [`src/sync/merge.ts`](../src/sync/merge.ts), and [`src/sync/normalize.ts`](../src/sync/normalize.ts) — learn transformations and conflict rules.
+10. [`src/sync/sync.service.ts`](../src/sync/sync.service.ts) — read the whole algorithm end-to-end.
+11. [`src/hooks/use-sync.ts`](../src/hooks/use-sync.ts) — see when React triggers synchronization without gating local access.
+12. [`src/sync/mapper.test.ts`](../src/sync/mapper.test.ts) and [`src/stores/auth-store.test.ts`](../src/stores/auth-store.test.ts) — see executable examples for mapping, merge behavior, and credential expiration persistence.
 
 ---
 
@@ -425,7 +477,10 @@ When either device syncs:
 3. **Watch sync logs:** Run `pnpm dev`; development mode logs `[sync]` events to the console.
 4. **Study the payload:** After a sync, use Google’s Drive API Explorer or an authenticated request to inspect the app-data JSON. Never paste the access token into an untrusted site.
 5. **Simulate a conflict:** Use two browser profiles signed into the same account, change the same entry while each is offline, reconnect both, and compare the `updatedAt` values.
-6. **Add a test before changing merge logic:** `src/sync/mapper.test.ts` is the correct place to protect the merge rules. Run `pnpm test` after changing it.
+6. **Test token expiration:** In DevTools, change the `access-token-expires-at` cookie to a past timestamp and reload. Local entries should remain visible while Drive attempts GIS reacquisition.
+7. **Test bounded `401` recovery:** Mock or revoke the current credential and confirm the first Drive `401` causes one acquisition and one retry—not an infinite loop.
+8. **Test reconnect failure:** Cancel the Google prompt. The journal should remain usable and Settings should show **Reconnect Google**.
+9. **Add a test before changing merge logic:** `src/sync/mapper.test.ts` is the correct place to protect the merge rules. Run `pnpm test` after changing it.
 
 ---
 
@@ -435,7 +490,9 @@ When either device syncs:
 - [ ] Add every development and production origin to its authorized JavaScript origins.
 - [ ] Enable the Google Drive API in the same Google Cloud project.
 - [ ] Configure `VITE_GOOGLE_CLIENT_ID` locally and in the deployment environment; never commit secrets.
-- [ ] Design re-authorization/token-expiry UX and test a Drive `401` response.
+- [ ] Test valid-token reload, expired-token reload, revoked-token `401` recovery, retry failure, and the manual **Reconnect Google** action.
+- [ ] Verify concurrent startup Drive operations produce only one GIS token request.
+- [ ] Verify a Drive `403` and a network failure do not trigger repeated authorization requests.
 - [ ] Add a Content Security Policy and XSS defenses before storing bearer tokens in JavaScript-readable storage.
 - [ ] Test sign-in, offline edits, reconnect sync, deletion propagation, malformed cloud JSON, and two-device conflicts.
 - [ ] Decide how users can export, restore, and permanently delete their journal data.
@@ -451,8 +508,9 @@ When either device syncs:
 | **CRUD** | Create, read, update, and delete. |
 | **Debounce** | Wait briefly after repeated events, then perform one action. |
 | **IndexedDB transaction** | A group of browser database operations that completes together or fails together. |
-| **Local-first** | Save locally immediately; synchronize remotely later. |
+| **Local-first** | Save and read locally independently; synchronize remotely later when authentication and networking are available. |
 | **OAuth 2.0** | Delegated authorization standard used to request access to Google APIs. |
+| **Safety buffer** | Time subtracted from token validity so a request does not start immediately before expiration; Gratefully uses 60 seconds. |
 | **Tombstone** | A retained deletion record that lets sync propagate a deletion. |
 | **UUID** | A globally unique identifier used here as the stable entry ID. |
 | **XSS** | Cross-site scripting: injected JavaScript that can read browser-accessible data. |
@@ -461,4 +519,4 @@ When either device syncs:
 
 ## The most important mental model
 
-Think of each device’s IndexedDB database as a working copy of the journal and the Drive JSON file as a shared backup/meeting point. Every sync reads both copies, resolves each entry by its ID and modification time, writes the resolved result locally, and then updates Drive only if Drive is behind. The design favors availability and simplicity over perfect multi-device collaborative editing.
+Think of each device’s IndexedDB database as the immediately available working copy of the journal and the Drive JSON file as an optional shared backup/meeting point. Drive synchronization first obtains a currently valid short-lived token, but token expiration or reacquisition failure never removes or blocks the local copy. Every successful sync reads both copies, resolves each entry by its ID and modification time, writes the resolved result locally, and then updates Drive only if Drive is behind. The design favors local availability and simplicity over perfect multi-device collaborative editing.

@@ -15,15 +15,15 @@ type SyncState = {
 const DEBOUNCE_MS = 3_000
 
 export function useSync(): SyncState {
-  const accessToken = useAuthStore((state) => state.auth.accessToken)
+  const user = useAuthStore((state) => state.auth.user)
   const [status, setStatus] = useState<SyncStatus>('idle')
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null)
   const [error, setError] = useState<Error | null>(null)
   const debounceTimer = useRef<number | null>(null)
-  const initialSyncToken = useRef<string | null>(null)
+  const initialSyncAccount = useRef<string | null>(null)
 
   const sync = useCallback(async () => {
-    if (!accessToken) return
+    if (!user) return
     if (!navigator.onLine) {
       setStatus('offline')
       return
@@ -48,16 +48,16 @@ export function useSync(): SyncState {
       setError(syncError)
       setStatus('error')
     }
-  }, [accessToken])
+  }, [user])
 
   useEffect(() => {
-    if (!accessToken) {
-      initialSyncToken.current = null
+    if (!user) {
+      initialSyncAccount.current = null
       return
     }
-    if (initialSyncToken.current === accessToken) return
+    if (initialSyncAccount.current === user.accountNo) return
 
-    initialSyncToken.current = accessToken
+    initialSyncAccount.current = user.accountNo
     if (import.meta.env.DEV) {
       // eslint-disable-next-line no-console
       console.debug('[sync] auth ready')
@@ -65,10 +65,10 @@ export function useSync(): SyncState {
       console.debug('[sync] initial sync requested')
     }
     void sync()
-  }, [accessToken, sync])
+  }, [user, sync])
 
   useEffect(() => {
-    if (!accessToken) return
+    if (!user) return
 
     const scheduleSync = () => {
       if (debounceTimer.current !== null) {
@@ -95,7 +95,7 @@ export function useSync(): SyncState {
         window.clearTimeout(debounceTimer.current)
       }
     }
-  }, [accessToken, sync])
+  }, [user, sync])
 
   return { status, lastSyncedAt, error, sync }
 }

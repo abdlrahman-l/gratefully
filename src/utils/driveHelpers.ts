@@ -1,13 +1,3 @@
-import { useAuthStore } from '@/stores/auth-store'
-
-/**
- * Adapter for the existing authentication state. Drive services deliberately do
- * not own token refresh or sign-in; callers receive the current GIS token only.
- */
-export function getAccessToken(): string | null {
-  const token = useAuthStore.getState().auth.accessToken.trim()
-  return token.length > 0 ? token : null
-}
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)

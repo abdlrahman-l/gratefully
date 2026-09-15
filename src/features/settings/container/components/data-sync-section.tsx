@@ -1,9 +1,27 @@
 import { CloudIcon, ShieldCheckIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
+import { requestNewAccessToken } from '@/services/google-token.service'
+import { useAuthStore } from '@/stores/auth-store'
+import { Button } from '@/components/ui/button'
 import { SectionTitle } from './settings-primitives'
 
 export function DataSyncSection() {
   const { t } = useTranslation()
+  const authStatus = useAuthStore((state) => state.auth.status)
+  const isConnected = authStatus === 'authenticated'
+  const isReauthorizing = authStatus === 'reauthorizing'
+
+  const reconnect = async () => {
+    try {
+      await requestNewAccessToken('consent')
+      toast.success('Google Drive reconnected')
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Unable to reconnect Google.'
+      )
+    }
+  }
 
   return (
     <section className='space-y-3' aria-label={t('settings.dataSync')}>
@@ -18,9 +36,18 @@ export function DataSyncSection() {
               <p className='font-label text-sm font-semibold text-foreground'>
                 Google Drive
               </p>
-              <span className='flex items-center gap-1 text-xs font-medium text-primary'>
-                <span className='size-2 rounded-full bg-primary' aria-hidden />
-                {t('settings.connected')}
+              <span
+                className={`flex items-center gap-1 text-xs font-medium ${isConnected ? 'text-primary' : 'text-muted-foreground'}`}
+              >
+                <span
+                  className={`size-2 rounded-full ${isConnected ? 'bg-primary' : 'bg-muted-foreground'}`}
+                  aria-hidden
+                />
+                {isConnected
+                  ? t('settings.connected')
+                  : isReauthorizing
+                    ? 'Reconnecting…'
+                    : 'Disconnected'}
               </span>
             </div>
             <p className='mt-2 font-body-md text-sm leading-6 text-muted-foreground'>
@@ -29,6 +56,17 @@ export function DataSyncSection() {
             <p className='mt-3 font-label text-xs font-medium text-muted-foreground'>
               {t('settings.lastSynced')}
             </p>
+            {!isConnected && (
+              <Button
+                className='mt-3'
+                size='sm'
+                variant='outline'
+                disabled={isReauthorizing}
+                onClick={() => void reconnect()}
+              >
+                Reconnect Google
+              </Button>
+            )}
           </div>
         </div>
       </div>

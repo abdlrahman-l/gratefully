@@ -9,9 +9,11 @@ export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
 }>()({
   beforeLoad: ({ location }) => {
-    const { accessToken } = useAuthStore.getState().auth
+    const { user } = useAuthStore.getState().auth
 
-    if (location.pathname !== '/auth' && !accessToken) {
+    // The persisted account identifies access to this device's local journal.
+    // Drive token validity is handled independently by background sync.
+    if (location.pathname !== '/auth' && !user) {
       throw redirect({ to: '/auth' })
     }
   },

@@ -6,7 +6,11 @@ import type {
 } from '@/types/drive'
 import type { JournalDatabase } from '@/types/journal'
 import {
-  getAccessToken,
+  getValidAccessToken,
+  invalidateAccessToken,
+  requestNewAccessToken,
+} from '@/services/google-token.service'
+import {
   isJournalDate,
   isIsoDateString,
   isRecord,
@@ -52,20 +56,11 @@ function cloneDatabase(database: JournalDatabase): JournalDatabase {
   }
 }
 
-function requireToken(): string {
-  const token = getAccessToken()
-  if (!token) {
-    throw new DriveServiceError(
-      'AUTHENTICATION',
-      'A Google access token is required.'
-    )
-  }
-  return token
-}
-
-async function request(url: string, init: RequestInit = {}): Promise<Response> {
-  const token = requireToken()
-
+async function fetchWithToken(
+  url: string,
+  init: RequestInit,
+  token: string
+): Promise<Response> {
   try {
     return await fetch(url, {
       ...init,
@@ -81,6 +76,40 @@ async function request(url: string, init: RequestInit = {}): Promise<Response> {
       `Unable to reach Google Drive${detail}`
     )
   }
+}
+
+async function request(url: string, init: RequestInit = {}): Promise<Response> {
+  let token: string
+  try {
+    token = await getValidAccessToken()
+  } catch (error) {
+    throw new DriveServiceError(
+      'AUTHENTICATION',
+      error instanceof Error
+        ? error.message
+        : 'Google Drive authorization is unavailable.'
+    )
+  }
+
+  let response = await fetchWithToken(url, init, token)
+  if (response.status !== 401) return response
+
+  invalidateAccessToken()
+  try {
+    token = await requestNewAccessToken()
+  } catch (error) {
+    throw new DriveServiceError(
+      'AUTHENTICATION',
+      error instanceof Error
+        ? error.message
+        : 'Google Drive authorization is unavailable.',
+      401
+    )
+  }
+
+  response = await fetchWithToken(url, init, token)
+  if (response.status === 401) invalidateAccessToken()
+  return response
 }
 
 async function errorFromResponse(
