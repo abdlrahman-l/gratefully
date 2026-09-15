@@ -2,6 +2,7 @@ import { CloudIcon, ShieldCheckIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { requestNewAccessToken } from '@/services/google-token.service'
+import { useSync } from '@/hooks/use-sync'
 import { useAuthStore } from '@/stores/auth-store'
 import { Button } from '@/components/ui/button'
 import { SectionTitle } from './settings-primitives'
@@ -11,6 +12,11 @@ export function DataSyncSection() {
   const authStatus = useAuthStore((state) => state.auth.status)
   const isConnected = authStatus === 'authenticated'
   const isReauthorizing = authStatus === 'reauthorizing'
+  const { status, pendingCount, lastSyncedAt, error, sync } = useSync()
+
+  const backupNow = async () => {
+    await sync()
+  }
 
   const reconnect = async () => {
     try {
@@ -54,8 +60,18 @@ export function DataSyncSection() {
               {t('settings.storageDescription')}
             </p>
             <p className='mt-3 font-label text-xs font-medium text-muted-foreground'>
-              {t('settings.lastSynced')}
+              {pendingCount
+                ? `${pendingCount} ${pendingCount === 1 ? 'entry has' : 'entries have'} not been backed up yet`
+                : lastSyncedAt
+                  ? `Everything is backed up · ${new Date(lastSyncedAt).toLocaleString()}`
+                  : t('settings.lastSynced')}
             </p>
+            {error && <p className='mt-1 text-xs text-destructive'>{error.message}</p>}
+            {isConnected && (
+              <Button className='mt-3' size='sm' variant='outline' disabled={status === 'syncing'} onClick={() => void backupNow()}>
+                {status === 'syncing' ? 'Backing up…' : 'Back up now'}
+              </Button>
+            )}
             {!isConnected && (
               <Button
                 className='mt-3'

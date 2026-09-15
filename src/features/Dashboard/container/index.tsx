@@ -69,7 +69,7 @@ export function DashboardContainer() {
 
   return (
     <main
-      className='container w-full max-w-md px-4 py-5'
+      className='container w-full max-w-md px-4 py-5 pb-24'
       aria-busy={isLoading}
     >
       {isLoading ? (

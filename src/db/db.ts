@@ -1,5 +1,5 @@
 const DATABASE_NAME = 'gratefully-journal'
-const DATABASE_VERSION = 1
+const DATABASE_VERSION = 2
 
 let databasePromise: Promise<IDBDatabase> | undefined
 

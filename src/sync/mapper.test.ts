@@ -10,6 +10,9 @@ const entry = (overrides: Partial<GratefullyEntry> = {}): GratefullyEntry => ({
   createdAt: '2026-09-14T10:00:00.000Z',
   updatedAt: '2026-09-14T10:00:00.000Z',
   deletedAt: null,
+  syncStatus: 'synced',
+  pendingMonths: [],
+  previousDate: null,
   ...overrides,
 })
 
