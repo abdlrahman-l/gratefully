@@ -58,7 +58,7 @@ export function HistoryFeed({
             {t('grateful.noEntries')}
           </p>
         ) : (
-          entries.map((entry) => (
+          entries.slice(0, 10).map((entry) => (
             <div
               key={entry.id}
               className='group flex flex-col gap-2.5 rounded-xl border border-outline-variant/10 bg-surface-container-lowest p-3.5 shadow-ambient transition-shadow duration-300 hover:shadow-md sm:gap-2 sm:rounded-2xl sm:p-5'
