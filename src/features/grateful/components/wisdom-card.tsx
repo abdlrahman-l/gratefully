@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { LeafIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { Button } from '@/components/ui/button'
 import {
   Carousel,
   CarouselContent,
@@ -34,11 +35,13 @@ function WisdomDots({ activeIndex }: { activeIndex: number }) {
         const ayat = t(`grateful.wisdomCard.slides.${slide}.ayat`)
 
         return (
-          <button
+          <Button
             key={slide}
+            variant='ghost'
+            size='icon'
             aria-label={t('grateful.wisdomCard.showVerse', { verse: ayat })}
             aria-current={activeIndex === index ? 'true' : undefined}
-            className={`h-1.5 rounded-full transition-all ${
+            className={`h-1.5 rounded-full p-0 transition-all hover:bg-primary/60 ${
               activeIndex === index ? 'w-5 bg-primary' : 'w-1.5 bg-primary/30'
             }`}
             onClick={() => scrollTo(index)}

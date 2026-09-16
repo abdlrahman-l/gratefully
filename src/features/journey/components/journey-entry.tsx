@@ -36,9 +36,10 @@ export function JourneyEntry({
 
   return (
     <div className='flex items-start gap-3 border-b border-outline-variant/20 py-4 first:pt-0 last:border-b-0 last:pb-0'>
-      <button
+      <Button
         type='button'
-        className='min-w-0 flex-1 rounded-xl text-start outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2'
+        variant='ghost'
+        className='h-auto min-w-0 flex-1 justify-start rounded-xl p-0 text-start whitespace-normal hover:bg-transparent'
         onClick={() => onOpen(entry)}
       >
         <p className='font-label text-sm font-medium text-outline'>
@@ -47,7 +48,7 @@ export function JourneyEntry({
         <p className='mt-1.5 line-clamp-3 font-body-md text-sm leading-6 text-on-surface'>
           {entry.content}
         </p>
-      </button>
+      </Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button

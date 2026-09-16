@@ -67,7 +67,6 @@ export function JournalInput({
             </Button>
           )}
           <Button
-            className='flex h-auto items-center gap-2 rounded-full bg-primary px-6 py-3 font-label text-sm font-medium text-white shadow-md transition-colors duration-300 hover:bg-surface-tint'
             disabled={isSaving || !content.trim()}
             type='submit'
           >

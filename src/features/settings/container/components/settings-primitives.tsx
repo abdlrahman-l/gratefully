@@ -1,6 +1,7 @@
 import type { ComponentType, ReactNode } from 'react'
 import { CheckIcon, ChevronRightIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import { RadioGroupItem } from '@/components/ui/radio-group'
 
 export function SectionTitle({ children }: { children: ReactNode }) {
@@ -23,9 +24,10 @@ export function SettingsRow({
   onClick: () => void
 }) {
   return (
-    <button
+    <Button
       type='button'
-      className='flex w-full items-center gap-3 px-4 py-4 text-start transition-colors hover:bg-muted/60 focus-visible:bg-muted/60 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none'
+      variant='ghost'
+      className='h-auto w-full justify-start rounded-none px-4 py-4 text-start whitespace-normal hover:bg-muted/60 focus-visible:bg-muted/60'
       onClick={onClick}
     >
       <span className='flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary'>
@@ -43,7 +45,7 @@ export function SettingsRow({
         className='size-5 shrink-0 text-muted-foreground'
         aria-hidden
       />
-    </button>
+    </Button>
   )
 }
 
