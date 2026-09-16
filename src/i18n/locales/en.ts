@@ -150,6 +150,9 @@ export const en = {
     dataSync: 'Data & Sync',
     connected: 'Connected',
     lastSynced: 'Last synced: Just now',
+    pendingBackup_one: '{{count}} entry has not been backed up yet',
+    pendingBackup_other: '{{count}} entries have not been backed up yet',
+    everythingBackedUp: 'Everything is backed up · {{date}}',
     storageDescription:
       'Your gratefully entries are privately stored in your Google Drive.',
     ownershipTitle: 'Your data stays yours',

@@ -1,6 +1,7 @@
 import { CloudIcon, ShieldCheckIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
+import { getCurrentLanguage } from '@/i18n'
 import { requestNewAccessToken } from '@/services/google-token.service'
 import { useSync } from '@/hooks/use-sync'
 import { useAuthStore } from '@/stores/auth-store'
@@ -9,6 +10,7 @@ import { SectionTitle } from './settings-primitives'
 
 export function DataSyncSection() {
   const { t } = useTranslation()
+  const language = getCurrentLanguage()
   const authStatus = useAuthStore((state) => state.auth.status)
   const isConnected = authStatus === 'authenticated'
   const isReauthorizing = authStatus === 'reauthorizing'
@@ -64,9 +66,13 @@ export function DataSyncSection() {
             </p>
             <p className='mt-3 font-label text-xs font-medium text-muted-foreground'>
               {pendingCount
-                ? `${pendingCount} ${pendingCount === 1 ? 'entry has' : 'entries have'} not been backed up yet`
+                ? t('settings.pendingBackup', { count: pendingCount })
                 : lastSyncedAt
-                  ? `Everything is backed up · ${new Date(lastSyncedAt).toLocaleString()}`
+                  ? t('settings.everythingBackedUp', {
+                      date: new Date(lastSyncedAt).toLocaleString(
+                        language === 'id' ? 'id-ID' : 'en-US'
+                      ),
+                    })
                   : t('settings.lastSynced')}
             </p>
             {error && <p className='mt-1 text-xs text-destructive'>{error.message}</p>}

@@ -149,6 +149,8 @@ export const id = {
     dataSync: 'Data & Sinkronisasi',
     connected: 'Terhubung',
     lastSynced: 'Sinkronisasi terakhir: Baru saja',
+    pendingBackup_other: '{{count}} catatan belum dicadangkan',
+    everythingBackedUp: 'Semua data telah dicadangkan · {{date}}',
     storageDescription:
       'Catatan syukurmu disimpan secara pribadi di Google Drive milikmu.',
     ownershipTitle: 'Datamu tetap milikmu',
