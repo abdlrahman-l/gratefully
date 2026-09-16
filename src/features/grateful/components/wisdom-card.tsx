@@ -69,10 +69,10 @@ export function WisdomCard() {
   }, [isPaused])
 
   return (
-    <section className='flex flex-col gap-4'>
+    <section className='flex min-w-0 flex-col gap-4'>
       <Carousel
         aria-label={t('grateful.wisdomCard.label')}
-        className='rounded-[24px] bg-primary-container/10 p-6 shadow-ambient'
+        className='min-w-0 rounded-[24px] bg-primary-container/10 p-4 shadow-ambient sm:p-6'
         onSelect={setActiveIndex}
         activeIndex={activeIndex}
         onBlur={(event) => {
@@ -92,14 +92,12 @@ export function WisdomCard() {
                   {t(`grateful.wisdomCard.slides.${slide}.copy`)}
                   <span className='ml-1 text-primary opacity-50'>"</span>
                 </p>
-                <div className='mt-2 flex items-end justify-between gap-3'>
-                  <div>
-                    <p className='font-label text-sm font-medium text-outline'>
-                      - {t(`grateful.wisdomCard.slides.${slide}.ayat`)}
-                    </p>
-                  </div>
-                  <div className='flex shrink-0 items-center gap-2 rounded-full border border-outline-variant/30 bg-surface px-3 py-1.5 shadow-sm'>
-                    <LeafIcon className='size-4 text-primary' />
+                <div className='mt-2 flex min-w-0 flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between'>
+                  <p className='min-w-0 font-label text-sm font-medium text-outline'>
+                    - {t(`grateful.wisdomCard.slides.${slide}.ayat`)}
+                  </p>
+                  <div className='flex max-w-full items-center gap-2 rounded-full border border-outline-variant/30 bg-surface px-3 py-1.5 shadow-sm sm:shrink-0'>
+                    <LeafIcon className='size-4 shrink-0 text-primary' />
                     <span className='font-label text-sm font-medium text-primary'>
                       {t(`grateful.wisdomCard.slides.${slide}.theme`)}
                     </span>
