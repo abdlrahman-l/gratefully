@@ -1,6 +1,6 @@
 import { useNavigate } from '@tanstack/react-router'
 import { useAuthStore } from '@/stores/auth-store'
-import { ConfirmDialog } from '@/components/confirm-dialog'
+import { ConfirmSheet } from '@/components/confirm-sheet'
 
 interface SignOutDialogProps {
   open: boolean
@@ -21,15 +21,15 @@ export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
   }
 
   return (
-    <ConfirmDialog
+    <ConfirmSheet
       open={open}
       onOpenChange={onOpenChange}
       title='Sign out'
-      desc='Are you sure you want to sign out? You will need to sign in again to access your account.'
+      description='Are you sure you want to sign out? You will need to sign in again to access your account.'
+      cancelText='Cancel'
       confirmText='Sign out'
       destructive
-      handleConfirm={handleSignOut}
-      className='sm:max-w-sm'
+      onConfirm={handleSignOut}
     />
   )
 }

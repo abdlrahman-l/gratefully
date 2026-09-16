@@ -1,23 +1,15 @@
+import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { LogOutIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/auth-store'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import { ConfirmSheet } from '@/components/confirm-sheet'
 
 export function SignOutButton() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const [sheetOpen, setSheetOpen] = useState(false)
   const accessToken = useAuthStore((state) => state.auth.accessToken)
   const reset = useAuthStore((state) => state.auth.reset)
 
@@ -43,33 +35,25 @@ export function SignOutButton() {
   }
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button
-          variant='outline'
-          className='h-12 w-full rounded-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive'
-        >
-          <LogOutIcon aria-hidden />
-          {t('settings.signOut')}
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent className='rounded-2xl'>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{t('settings.signOutTitle')}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {t('settings.signOutDescription')}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-          <AlertDialogAction
-            className='bg-destructive text-white hover:bg-destructive/90'
-            onClick={handleSignOut}
-          >
-            {t('settings.signOut')}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <>
+      <Button
+        variant='outline'
+        className='h-12 w-full rounded-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive'
+        onClick={() => setSheetOpen(true)}
+      >
+        <LogOutIcon aria-hidden />
+        {t('settings.signOut')}
+      </Button>
+      <ConfirmSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        title={t('settings.signOutTitle')}
+        description={t('settings.signOutDescription')}
+        cancelText={t('common.cancel')}
+        confirmText={t('settings.signOut')}
+        onConfirm={handleSignOut}
+        destructive
+      />
+    </>
   )
 }
