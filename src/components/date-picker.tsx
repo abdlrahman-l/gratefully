@@ -14,12 +14,14 @@ type DatePickerProps = {
   selected: Date | undefined
   onSelect: (date: Date | undefined) => void
   placeholder?: string
+  markedDates?: Date[]
 }
 
 export function DatePicker({
   selected,
   onSelect,
   placeholder,
+  markedDates,
 }: DatePickerProps) {
   const { t } = useTranslation()
   const language = getCurrentLanguage()
@@ -61,6 +63,7 @@ export function DatePicker({
           captionLayout='dropdown'
           selected={selected}
           onSelect={onSelect}
+          modifiers={{ marked: markedDates }}
           className='rounded-2xl bg-transparent p-4'
           classNames={{
             day_button:

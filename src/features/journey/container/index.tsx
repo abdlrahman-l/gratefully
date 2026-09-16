@@ -139,6 +139,7 @@ export function JourneyContainer() {
       <JourneyFilters
         query={query}
         filterDate={filterDate}
+        journalDates={entries.map((entry) => entry.date)}
         onQueryChange={(value) => updateKey('query', value)}
         onDateChange={(value) => updateKey('date', value)}
         onReset={reset}

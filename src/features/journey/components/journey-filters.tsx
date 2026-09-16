@@ -8,6 +8,7 @@ import { DatePicker } from '@/components/date-picker'
 type JourneyFiltersProps = {
   query: string
   filterDate: string
+  journalDates: string[]
   onQueryChange: (value: string) => void
   onDateChange: (value: string) => void
   onReset: () => void
@@ -16,6 +17,7 @@ type JourneyFiltersProps = {
 export function JourneyFilters({
   query,
   filterDate,
+  journalDates,
   onQueryChange,
   onDateChange,
   onReset,
@@ -39,6 +41,7 @@ export function JourneyFilters({
         <DatePicker
           selected={filterDate ? parseISO(filterDate) : undefined}
           placeholder={t('journey.allDates')}
+          markedDates={journalDates.map((date) => parseISO(date))}
           onSelect={(date) =>
             onDateChange(date ? format(date, 'yyyy-MM-dd') : '')
           }
