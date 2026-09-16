@@ -3,16 +3,6 @@ import { PencilIcon, Trash2Icon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { formatJournalDate } from '@/lib/date-locale'
 import { cn } from '@/lib/utils'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -23,6 +13,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { Textarea } from '@/components/ui/textarea'
+import { ConfirmSheet } from '@/components/confirm-sheet'
 import type { GratefullyEntry } from '../types'
 
 function formatLongDate(date: string) {
@@ -154,30 +145,16 @@ export function JourneyDialogs({
         </SheetContent>
       </Sheet>
 
-      <AlertDialog
+      <ConfirmSheet
         open={deleteEntry !== null}
         onOpenChange={(open) => !open && onCloseDelete()}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('journey.deleteTitle')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('journey.deleteDescription')}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={onCloseDelete}>
-              {t('common.cancel')}
-            </AlertDialogCancel>
-            <AlertDialogAction
-              className='bg-destructive text-white hover:bg-destructive/90'
-              onClick={onConfirmDelete}
-            >
-              {t('common.delete')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        title={t('journey.deleteTitle')}
+        description={t('journey.deleteDescription')}
+        cancelText={t('common.cancel')}
+        confirmText={t('common.delete')}
+        destructive
+        onConfirm={onConfirmDelete}
+      />
     </>
   )
 }

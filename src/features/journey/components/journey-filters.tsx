@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { SearchIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { ConfirmSheet } from '@/components/confirm-sheet'
 import { DatePicker } from '@/components/date-picker'
 
 type JourneyFiltersProps = {
@@ -23,6 +25,21 @@ export function JourneyFilters({
   onReset,
 }: JourneyFiltersProps) {
   const { t } = useTranslation()
+  const [showClearConfirmation, setShowClearConfirmation] = useState(false)
+
+  const requestDateChange = (date: Date | undefined) => {
+    if (!date && filterDate) {
+      setShowClearConfirmation(true)
+      return
+    }
+
+    onDateChange(date ? format(date, 'yyyy-MM-dd') : '')
+  }
+
+  const confirmClear = () => {
+    onReset()
+    setShowClearConfirmation(false)
+  }
 
   return (
     <div className='flex flex-col gap-3'>
@@ -42,9 +59,7 @@ export function JourneyFilters({
           selected={filterDate ? parseISO(filterDate) : undefined}
           placeholder={t('journey.allDates')}
           markedDates={journalDates.map((date) => parseISO(date))}
-          onSelect={(date) =>
-            onDateChange(date ? format(date, 'yyyy-MM-dd') : '')
-          }
+          onSelect={requestDateChange}
         />
       </div>
 
@@ -53,11 +68,21 @@ export function JourneyFilters({
           type='button'
           variant='ghost'
           className='h-12 shrink-0 rounded-2xl px-3 text-outline hover:bg-primary/10 hover:text-primary'
-          onClick={onReset}
+          onClick={() => setShowClearConfirmation(true)}
         >
           {t('common.clear')}
         </Button>
       )}
+
+      <ConfirmSheet
+        open={showClearConfirmation}
+        onOpenChange={setShowClearConfirmation}
+        title={t('journey.clearFiltersTitle')}
+        description={t('journey.clearFiltersDescription')}
+        cancelText={t('common.cancel')}
+        confirmText={t('journey.clearFiltersConfirm')}
+        onConfirm={confirmClear}
+      />
     </div>
   )
 }

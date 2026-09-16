@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { getCurrentLanguage } from '@/i18n'
 import type { GratefullyEntry } from '@/types/gratefully'
 import { CalendarIcon, PencilIcon, Trash2Icon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { formatJournalDate } from '@/lib/date-locale'
 import { Button } from '@/components/ui/button'
+import { ConfirmSheet } from '@/components/confirm-sheet'
 
 interface HistoryFeedProps {
   entries: GratefullyEntry[]
@@ -22,6 +24,22 @@ export function HistoryFeed({
 }: HistoryFeedProps) {
   const { t } = useTranslation()
   const language = getCurrentLanguage()
+  const [entryToRemove, setEntryToRemove] = useState<GratefullyEntry | null>(
+    null
+  )
+  const [isRemoving, setIsRemoving] = useState(false)
+
+  const confirmRemove = async () => {
+    if (!entryToRemove || isRemoving) return
+
+    setIsRemoving(true)
+    try {
+      await onDelete(entryToRemove.id)
+      setEntryToRemove(null)
+    } finally {
+      setIsRemoving(false)
+    }
+  }
 
   return (
     <section className='flex flex-col gap-4 pb-20 sm:gap-4 sm:pb-24'>
@@ -83,7 +101,7 @@ export function HistoryFeed({
                     size='icon'
                     type='button'
                     variant='ghost'
-                    onClick={() => void onDelete(entry.id)}
+                    onClick={() => setEntryToRemove(entry)}
                   >
                     <Trash2Icon className='size-4' />
                   </Button>
@@ -96,6 +114,20 @@ export function HistoryFeed({
           ))
         )}
       </div>
+
+      <ConfirmSheet
+        open={entryToRemove !== null}
+        onOpenChange={(open) => !open && setEntryToRemove(null)}
+        title={t('grateful.removeTitle')}
+        description={t('grateful.removeDescription')}
+        cancelText={t('common.cancel')}
+        confirmText={
+          isRemoving ? t('grateful.removing') : t('grateful.removeConfirm')
+        }
+        destructive
+        isLoading={isRemoving}
+        onConfirm={() => void confirmRemove()}
+      />
     </section>
   )
 }

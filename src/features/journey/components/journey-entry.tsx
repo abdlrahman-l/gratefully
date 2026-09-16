@@ -39,13 +39,13 @@ export function JourneyEntry({
       <Button
         type='button'
         variant='ghost'
-        className='h-auto min-w-0 flex-1 justify-start rounded-xl p-0 text-start whitespace-normal hover:bg-transparent'
+        className='h-auto min-w-0 flex-1 flex-col items-start gap-1.5 rounded-xl p-0 text-start whitespace-normal hover:bg-transparent'
         onClick={() => onOpen(entry)}
       >
         <p className='font-label text-sm font-medium text-outline'>
           {shortDate}
         </p>
-        <p className='mt-1.5 line-clamp-3 font-body-md text-sm leading-6 text-on-surface'>
+        <p className='line-clamp-3 font-body-md text-sm leading-6 text-on-surface'>
           {entry.content}
         </p>
       </Button>
