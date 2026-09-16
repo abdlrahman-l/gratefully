@@ -24,7 +24,7 @@ declare global {
       namespace oauth2 {
         interface TokenClient {
           requestAccessToken: (overrideConfig?: {
-            prompt?: '' | 'consent' | 'select_account'
+            prompt?: '' | 'none' | 'consent' | 'select_account'
           }) => void
         }
 

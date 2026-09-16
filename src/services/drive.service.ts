@@ -1,6 +1,6 @@
 import type { DriveApiErrorResponse, DriveFile } from '@/types/drive'
 import type { JournalDatabase } from '@/types/journal'
-import { getValidAccessToken, invalidateAccessToken, requestNewAccessToken } from '@/services/google-token.service'
+import { getValidAccessToken, invalidateAccessToken } from '@/services/google-token.service'
 import { isRecord } from '@/utils/driveHelpers'
 
 const DRIVE_API_URL = 'https://www.googleapis.com/drive/v3'
@@ -26,13 +26,19 @@ async function fetchWithToken(url: string, init: RequestInit, token: string): Pr
 
 async function request(url: string, init: RequestInit = {}): Promise<Response> {
   let token: string
-  try { token = await getValidAccessToken() } catch (error) {
+  try {
+    // Drive operations never own a user gesture, so they may only recover silently.
+    token = await getValidAccessToken({ interactive: false })
+  } catch (error) {
     throw new DriveServiceError('AUTHENTICATION', error instanceof Error ? error.message : 'Google Drive authorization is unavailable.')
   }
   let response = await fetchWithToken(url, init, token)
   if (response.status !== 401) return response
+
   invalidateAccessToken()
-  try { token = await requestNewAccessToken() } catch (error) {
+  try {
+    token = await getValidAccessToken({ interactive: false })
+  } catch (error) {
     throw new DriveServiceError('AUTHENTICATION', error instanceof Error ? error.message : 'Google Drive authorization is unavailable.', 401)
   }
   response = await fetchWithToken(url, init, token)

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { getPendingCount } from '@/db/entries.repository'
 import { getSyncMetadata } from '@/db/metadata.repository'
+import { DriveServiceError } from '@/services/drive.service'
 import { SyncOfflineError, refreshFromGoogleDrive, syncNow } from '@/sync/sync.service'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -59,7 +60,9 @@ export function useSync(): SyncState {
     if (!user || !navigator.onLine) return
     // Local IndexedDB has already rendered. This is intentionally download-only.
     void refreshFromGoogleDrive().then(loadLocalState).catch((cause: unknown) => {
-      if (!(cause instanceof SyncOfflineError)) setError(cause instanceof Error ? cause : new Error('Cloud refresh failed.'))
+      // An expired Drive credential is expected to require an explicit reconnect.
+      if (cause instanceof SyncOfflineError || (cause instanceof DriveServiceError && cause.code === 'AUTHENTICATION')) return
+      setError(cause instanceof Error ? cause : new Error('Cloud refresh failed.'))
     })
   }, [loadLocalState, user])
 

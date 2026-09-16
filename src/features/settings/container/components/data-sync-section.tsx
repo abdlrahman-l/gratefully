@@ -12,6 +12,7 @@ export function DataSyncSection() {
   const authStatus = useAuthStore((state) => state.auth.status)
   const isConnected = authStatus === 'authenticated'
   const isReauthorizing = authStatus === 'reauthorizing'
+  const needsReconnection = authStatus === 'reconnection-required'
   const { status, pendingCount, lastSyncedAt, error, sync } = useSync()
 
   const backupNow = async () => {
@@ -20,7 +21,7 @@ export function DataSyncSection() {
 
   const reconnect = async () => {
     try {
-      await requestNewAccessToken('consent')
+      await requestNewAccessToken({ interactive: true, prompt: 'consent' })
       toast.success('Google Drive reconnected')
     } catch (error) {
       toast.error(
@@ -53,7 +54,9 @@ export function DataSyncSection() {
                   ? t('settings.connected')
                   : isReauthorizing
                     ? 'Reconnecting…'
-                    : 'Disconnected'}
+                    : needsReconnection
+                      ? 'Reconnection required'
+                      : 'Disconnected'}
               </span>
             </div>
             <p className='mt-2 font-body-md text-sm leading-6 text-muted-foreground'>
@@ -73,7 +76,13 @@ export function DataSyncSection() {
               </Button>
             )}
             {!isConnected && (
-              <Button
+              <>
+                {needsReconnection && (
+                  <p className='mt-3 text-xs text-muted-foreground'>
+                    Google Drive needs to be reconnected before backup.
+                  </p>
+                )}
+                <Button
                 className='mt-3'
                 size='sm'
                 variant='outline'
@@ -81,7 +90,8 @@ export function DataSyncSection() {
                 onClick={() => void reconnect()}
               >
                 Reconnect Google
-              </Button>
+                </Button>
+              </>
             )}
           </div>
         </div>

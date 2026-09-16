@@ -44,8 +44,9 @@ describe('useAuthStore', () => {
     expect(auth.status).toBe('authenticated')
   })
 
-  it('does not restore an expired access token', async () => {
+  it('keeps the local user and requires Drive reconnection when a token has expired', async () => {
     const useAuthStore = await importAuthStore()
+    useAuthStore.getState().auth.setUser({ ...sampleUser })
     useAuthStore
       .getState()
       .auth.setCredentials('expired-token', Date.now() - 1_000)
@@ -53,9 +54,23 @@ describe('useAuthStore', () => {
     vi.resetModules()
     const auth = (await importAuthStore()).getState().auth
 
+    expect(auth.user).toEqual(sampleUser)
     expect(auth.accessToken).toBe('')
     expect(auth.expiresAt).toBeNull()
-    expect(auth.status).toBe('unauthenticated')
+    expect(auth.status).toBe('reconnection-required')
+  })
+
+  it('marks Drive reconnection as required when credentials are cleared for a local user', async () => {
+    const useAuthStore = await importAuthStore()
+    useAuthStore.getState().auth.setUser({ ...sampleUser })
+    useAuthStore
+      .getState()
+      .auth.setCredentials('to-clear', Date.now() + 3_600_000)
+
+    useAuthStore.getState().auth.resetAccessToken()
+
+    expect(useAuthStore.getState().auth.user).toEqual(sampleUser)
+    expect(useAuthStore.getState().auth.status).toBe('reconnection-required')
   })
 
   it('clears persisted access token and expiration together', async () => {

@@ -23,7 +23,7 @@ export const AuthContainer = () => {
     setIsLoading(true)
 
     try {
-      const accessToken = await requestNewAccessToken('consent')
+      const accessToken = await requestNewAccessToken({ interactive: true, prompt: 'consent' })
       const profileResponse = await fetch(GOOGLE_USERINFO_URL, {
         headers: { Authorization: `Bearer ${accessToken}` },
       })

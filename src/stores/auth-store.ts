@@ -9,6 +9,7 @@ export type AuthStatus =
   | 'initializing'
   | 'authenticated'
   | 'reauthorizing'
+  | 'reconnection-required'
   | 'unauthenticated'
 
 export interface AuthUser {
@@ -81,7 +82,11 @@ export const useAuthStore = create<AuthState>()((set) => {
         }),
       accessToken: hasValidToken ? initToken : '',
       expiresAt: hasValidToken ? initExpiresAt : null,
-      status: hasValidToken ? 'authenticated' : 'unauthenticated',
+      status: hasValidToken
+        ? 'authenticated'
+        : initUser
+          ? 'reconnection-required'
+          : 'unauthenticated',
       setCredentials: (accessToken, expiresAt) =>
         set((state) => {
           setCookie(ACCESS_TOKEN, JSON.stringify(accessToken))
@@ -111,7 +116,9 @@ export const useAuthStore = create<AuthState>()((set) => {
               ...state.auth,
               accessToken: '',
               expiresAt: null,
-              status: 'unauthenticated',
+              status: state.auth.user
+                ? 'reconnection-required'
+                : 'unauthenticated',
             },
           }
         }),

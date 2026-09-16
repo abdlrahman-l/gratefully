@@ -8,6 +8,11 @@ const GOOGLE_SCOPE = [
   'https://www.googleapis.com/auth/drive.appdata',
 ].join(' ')
 
+type TokenRequestOptions = {
+  interactive: boolean
+  prompt?: '' | 'consent' | 'select_account'
+}
+
 let tokenClient: google.accounts.oauth2.TokenClient | null = null
 let tokenRequest: Promise<string> | null = null
 let resolveToken: ((token: string) => void) | null = null
@@ -115,19 +120,27 @@ export function invalidateAccessToken(): void {
   useAuthStore.getState().auth.resetAccessToken()
 }
 
-export function requestNewAccessToken(
-  prompt: '' | 'consent' | 'select_account' = ''
-): Promise<string> {
+/**
+ * Requests a GIS token. Callers must explicitly opt in to interactive UI.
+ * `prompt: 'none'` makes the background path fail instead of opening GIS UI.
+ */
+export function requestNewAccessToken({
+  interactive,
+  prompt,
+}: TokenRequestOptions): Promise<string> {
   if (tokenRequest) return tokenRequest
 
-  const auth = useAuthStore.getState().auth
-  auth.setStatus('reauthorizing')
+  useAuthStore.getState().auth.setStatus('reauthorizing')
   tokenRequest = new Promise<string>((resolve, reject) => {
     resolveToken = resolve
     rejectToken = reject
 
     void getTokenClient()
-      .then((client) => client.requestAccessToken({ prompt }))
+      .then((client) =>
+        client.requestAccessToken({
+          prompt: interactive ? (prompt ?? 'consent') : 'none',
+        })
+      )
       .catch((error: unknown) => {
         settleTokenRequest(
           error instanceof Error
@@ -137,7 +150,7 @@ export function requestNewAccessToken(
       })
   })
     .catch((error: unknown) => {
-      useAuthStore.getState().auth.setStatus('unauthenticated')
+      useAuthStore.getState().auth.resetAccessToken()
       throw error
     })
     .finally(() => {
@@ -147,11 +160,13 @@ export function requestNewAccessToken(
   return tokenRequest
 }
 
-export async function getValidAccessToken(): Promise<string> {
+export async function getValidAccessToken({
+  interactive = false,
+}: Partial<TokenRequestOptions> = {}): Promise<string> {
   if (isAccessTokenValid()) {
     return useAuthStore.getState().auth.accessToken
   }
 
   invalidateAccessToken()
-  return requestNewAccessToken()
+  return requestNewAccessToken({ interactive })
 }

@@ -94,9 +94,13 @@ const GOOGLE_SCOPE = [
 - caches one in-flight token request so concurrent callers do not open multiple prompts;
 - considers a token invalid in its final 60 seconds;
 - stores `accessToken` and `expiresAt` together through `auth-store`;
-- clears unavailable/revoked credentials and exposes `authenticated`, `reauthorizing`, or `unauthenticated` status.
+- clears unavailable/revoked credentials and exposes `authenticated`, `reauthorizing`, `reconnection-required`, or `unauthenticated` status.
 
-`src/services/drive.service.ts` is the only Drive HTTP boundary. It adds the bearer token, converts network/API failures to `DriveServiceError`, and handles a Drive `401` by invalidating the token, acquiring one replacement token, and retrying the request once. It does not retry `403` responses as an authorization loop.
+The persisted profile (`auth.user`) is the local application session; the short-lived Drive token is separate. If a profile exists but the token is absent or expired, the user remains in the local journal and Drive is `reconnection-required`.
+
+Background Drive operations call token acquisition with `interactive: false`. GIS is invoked with `prompt: 'none'`, so silent recovery either succeeds without UI or fails and marks Drive as requiring reconnection. Only the Google sign-in and Settings **Reconnect Google** button call the `interactive: true` path, which may present the account chooser.
+
+`src/services/drive.service.ts` is the only Drive HTTP boundary. It adds the bearer token, converts network/API failures to `DriveServiceError`, and handles a Drive `401` by invalidating the token, attempting one **non-interactive** replacement token, and retrying the request once. A silent recovery failure aborts the operation without opening GIS UI; it does not retry `403` responses as an authorization loop.
 
 The user profile, token, and expiry are persisted in browser cookies by `src/stores/auth-store.ts`. Because JavaScript-written cookies are not `HttpOnly`, the token is exposed to any successful XSS attack. `VITE_GOOGLE_CLIENT_ID` is public configuration, but no Google client secret belongs in this frontend. Deploy with a restrictive Content Security Policy and standard XSS defenses.
 
@@ -207,7 +211,7 @@ The active protocol has two intentionally distinct operations in `src/sync/sync.
 
 ### 1. Startup refresh: Drive to IndexedDB only
 
-`useSync()` starts `refreshFromGoogleDrive()` when a persisted user is present and the browser is online. Local IndexedDB has already rendered, so refresh cannot block the journal UI.
+`useSync()` starts `refreshFromGoogleDrive()` when a persisted user is present and the browser is online. Local IndexedDB has already rendered, so refresh cannot block the journal UI. If the Drive token has expired, the refresh performs only silent GIS recovery; an interaction-required result stops the refresh and leaves the Settings UI in the reconnection-required state without showing an error or account chooser.
 
 ```mermaid
 flowchart TD
@@ -223,7 +227,7 @@ flowchart TD
     Remember --> Done
 ```
 
-A refresh is download-only: it never uploads pending local edits. A newly authorized Drive account remains empty until the user selects **Back up now** in Settings.
+A refresh is download-only: it never uploads pending local edits. A newly authorized Drive account remains empty until the user selects **Back up now** in Settings. While Drive is disconnected, local creates, edits, and deletes continue to be stored as `pending`; they are acknowledged only after a successful manual backup following reconnection.
 
 ### 2. Manual backup: pending IndexedDB records to Drive
 
