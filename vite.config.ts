@@ -24,18 +24,39 @@ import { getMessaging, onBackgroundMessage } from 'https://www.gstatic.com/fireb
 const firebaseConfig = ${JSON.stringify(firebaseConfig)}
 
 if (${hasFirebaseConfiguration}) {
-  const messaging = getMessaging(initializeApp(firebaseConfig))
 
-  onBackgroundMessage(messaging, (payload) => {
-    const notification = payload.notification
-    if (!notification) return
+console.log('[SW] Firebase messaging SW loaded')
 
-    void self.registration.showNotification(notification.title ?? 'Gratefully', {
+const app = initializeApp(firebaseConfig)
+const messaging = getMessaging(app)
+
+onBackgroundMessage(messaging, (payload) => {
+  console.log('[SW] Background message received:', payload)
+
+  const notification = payload.notification
+
+  if (!notification) {
+    console.warn('[SW] Payload has no notification')
+    return
+  }
+
+  return self.registration.showNotification(
+    notification.title ?? 'Gratefully',
+    {
       body: notification.body,
       icon: '/images/leaf-logo.svg',
       data: payload.data,
-    })
-  })
+    },
+  )
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+
+  event.waitUntil(
+    clients.openWindow('/'),
+  )
+})
 } else {
   console.error('[notifications] Firebase Cloud Messaging is not configured.')
 }
