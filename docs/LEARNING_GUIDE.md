@@ -1,83 +1,131 @@
-# Gratefully architecture guide
+# Panduan Belajar Proyek Gratefully
 
-This document describes the architecture implemented in this repository. Gratefully is a **local-first gratitude journal**: IndexedDB is the working copy used by the UI, while Google Drive app-data storage is an optional, user-owned backup and cross-device synchronization target.
+Panduan ini membantu developer baru memahami implementasi Gratefully secara bertahap. Untuk referensi arsitektur yang lebih lengkap, baca juga [`STACK_DAN_ARSITEKTUR.md`](./STACK_DAN_ARSITEKTUR.md).
 
-> **Mental model:** local writes are immediate and durable in the browser. A Google Drive refresh may bring newer remote records into IndexedDB; a manual backup uploads only local records that are still pending.
+## 1. Tujuan belajar
 
----
+Setelah mengikuti panduan ini, Anda diharapkan memahami:
 
-## Stack and ownership
+- cara React, TanStack Router, Zustand, dan IndexedDB bekerja bersama;
+- perbedaan sesi lokal Gratefully dan koneksi Google Drive;
+- alur OAuth Google Identity Services;
+- cara data lokal ditandai sebagai `pending`;
+- perbedaan startup refresh dan backup manual;
+- format file JSON di Google Drive `appDataFolder`;
+- cara konflik, penghapusan, dan perpindahan bulan ditangani;
+- batasan serta risiko arsitektur saat ini.
 
-| Concern | Implementation | Responsibility |
-| --- | --- | --- |
-| UI | React 19, TypeScript, Tailwind CSS, shadcn/Radix | Screens, accessible primitives, and feature components. |
-| Build | Vite | Development server and production bundle. |
-| Routing | TanStack Router | File-based typed routes under `src/routes/`. |
-| Server/cache state | TanStack Query | Shared query configuration and async request tooling. |
-| App state | Zustand | Persisted Google profile, access token, expiry, and Drive connection status. |
-| Local persistence | Native IndexedDB | Offline journal records and sync metadata. |
-| Cloud backup | Google Identity Services and Google Drive REST API | OAuth access tokens and private app-data JSON files. |
-| Localization | i18next / react-i18next | English and Indonesian UI translations. |
+## 2. Model mental paling sederhana
 
-### Source layout
+Anggap Gratefully memiliki dua salinan data:
 
-```text
-src/
-├── routes/                 # TanStack Router route definitions
-├── components/             # Shared UI, root shell, navigation, layout
-├── features/               # Feature containers, components, and feature hooks
-│   ├── auth/               # Google sign-in
-│   ├── grateful/           # Write and view recent entries
-│   ├── journey/            # Browse, filter, edit, and delete entries
-│   ├── settings/           # Account, language, and backup controls
-│   └── Dashboard/          # Journal statistics and streak UI
-├── db/                     # IndexedDB database, repositories, and transactions
-├── sync/                   # Monthly-file mapping, merge, refresh, and backup
-├── services/               # Google token lifecycle and Drive HTTP boundary
-├── stores/                 # Zustand state
-├── hooks/                  # Cross-feature React hooks, including useSync
-├── types/                  # Shared domain and external API contracts
-├── i18n/                   # Localization initialization and dictionaries
-└── styles/                 # Application styles and theme tokens
-```
-
-## Application composition
-
-`src/main.tsx` creates the TanStack Query client and TanStack Router, then wraps the router with `QueryClientProvider` and `DirectionProvider`.
-
-`src/routes/__root.tsx` is the session guard. Except for `/auth`, routes require a persisted `auth.user`. It intentionally does **not** require a valid Drive token: an expired or unavailable token must not lock a user out of their local journal.
-
-`src/components/root-component.tsx` provides the shared mobile shell, greeting, bottom navigation, toast host, developer tools, and `useSync()`.
-
-| Route | Feature container | Purpose |
-| --- | --- | --- |
-| `/auth` | `AuthContainer` | Interactive Google authorization and profile lookup. |
-| `/` | `DashboardContainer` | Journal-derived dashboard and streaks. |
-| `/grateful` | `GratefulContainer` | Create, edit, and show recent gratitude entries. |
-| `/journey` | `JourneyContainer` | Search, filter, inspect, edit, and delete the complete journal. |
-| `/settings` | `SettingsContainer` | Account preferences and Drive backup controls. |
-
-Feature containers coordinate feature-specific hooks and presentational components. They call repository functions such as `createEntry()` and `getActiveEntries()`; UI components do not call IndexedDB or Drive APIs directly.
+1. **Salinan kerja lokal** di IndexedDB — inilah yang dipakai layar aplikasi.
+2. **Salinan cloud** berupa file JSON di Google Drive — dipakai untuk backup dan pertukaran perubahan antarperangkat.
 
 ```mermaid
-flowchart TD
-    Route[Route] --> Container[Feature container]
-    Container --> Hook[Feature hook or local UI state]
-    Hook --> Repo[IndexedDB repository]
-    Repo --> IDB[(IndexedDB)]
-    Root[RootComponent] --> SyncHook[useSync]
-    SyncHook --> Refresh[Download-only Drive refresh]
-    Settings[Settings: Back up now] --> Backup[Manual Drive backup]
-    Refresh --> Repo
-    Backup --> Repo
-    Backup --> Drive[Drive service]
+flowchart LR
+    UI[React UI] -->|baca dan tulis| IDB[(IndexedDB)]
+    Drive[(Google Drive)] -->|startup refresh| IDB
+    IDB -->|Back up now| Drive
 ```
 
-## Authentication and Drive authorization
+Aturan terpenting:
 
-Google Identity Services (GIS) supplies a short-lived OAuth access token. The auth container requests consent, calls Google’s user-info endpoint with that token, persists the profile in the Zustand store, and navigates to `/grateful`.
+- menulis jurnal tidak menunggu Google Drive;
+- perubahan lokal langsung masuk IndexedDB sebagai `pending`;
+- startup refresh hanya mengunduh;
+- upload hanya terjadi melalui backup manual;
+- token Drive yang kedaluwarsa tidak menghapus sesi lokal pengguna.
 
-The requested scope is deliberately limited to identity information and app-private Drive storage:
+## 3. Stack yang perlu dipahami
+
+| Urutan | Teknologi | Yang perlu dipahami |
+| --- | --- | --- |
+| 1 | TypeScript | Object type, union type, `async`/`await`, dan module import. |
+| 2 | React 19 | Component, props, state, effect, dan custom hook. |
+| 3 | TanStack Router | File-based route, root route, `beforeLoad`, redirect. |
+| 4 | Zustand | Global store, selector, dan imperative `getState()`. |
+| 5 | IndexedDB | Database, object store, index, request, transaction. |
+| 6 | OAuth 2.0/GIS | Scope, access token, expiry, consent, dan account chooser. |
+| 7 | Google Drive API | List, download, multipart create/update, `appDataFolder`. |
+| 8 | Sinkronisasi data | Pending state, merge, tombstone, last-write-wins. |
+| 9 | Vitest Browser/Playwright | Test yang berjalan dalam browser Chromium. |
+
+UI memakai Tailwind CSS 4 dan komponen berbasis Radix/shadcn. i18next menangani terjemahan. TanStack Query tersedia di root aplikasi, tetapi penyimpanan jurnal utama tidak memakai query server; jurnal dibaca langsung dari repository IndexedDB.
+
+Autentikasi aktif menggunakan Google Identity Services, bukan Clerk, walaupun package Clerk masih tercantum sebagai dependency dari fondasi proyek.
+
+## 4. Tahap 1 — pahami bootstrap dan route
+
+Baca:
+
+1. `src/main.tsx`
+2. `src/routes/__root.tsx`
+3. `src/components/root-component.tsx`
+4. `src/routes/auth.tsx`
+5. `src/routes/grateful.tsx`
+6. `src/routes/journey.tsx`
+7. `src/routes/settings.tsx`
+
+### Yang terjadi saat startup
+
+1. `main.tsx` membuat `QueryClient` dan router.
+2. Aplikasi dibungkus `QueryClientProvider` dan `DirectionProvider`.
+3. Root route memasukkan script Google Identity Services.
+4. `RootComponent` menjalankan `initializeAuth()`.
+5. Setelah auth selesai, router di-invalidate agar route guard dievaluasi ulang.
+6. Route selain `/auth` memerlukan status `authenticated`.
+
+Route guard tidak mewajibkan Drive `connected`. Ini menjaga jurnal lokal tetap dapat digunakan ketika token Google telah kedaluwarsa.
+
+### Latihan
+
+- Cari semua route utama dan tulis feature container yang dirender.
+- Ubah token menjadi kedaluwarsa melalui DevTools, refresh, lalu amati bahwa jurnal lokal tetap dapat diakses.
+- Jelaskan mengapa redirect tidak dilakukan selama status masih `initializing`.
+
+## 5. Tahap 2 — pahami autentikasi Google
+
+Baca:
+
+1. `src/stores/auth-store.ts`
+2. `src/services/google-token.service.ts`
+3. `src/features/auth/container/index.tsx`
+4. `src/features/settings/container/components/data-sync-section.tsx`
+5. `src/features/settings/container/components/sign-out-button.tsx`
+6. `src/types/google.d.ts`
+7. `src/services/google-token.service.test.ts`
+
+### 5.1 State autentikasi
+
+Auth store mempunyai dua kelompok status:
+
+```ts
+type AuthStatus = 'initializing' | 'authenticated' | 'unauthenticated'
+type DriveConnectionStatus = 'connected' | 'disconnected' | 'connecting'
+```
+
+`AuthStatus` menjawab: **apakah pengguna mempunyai sesi lokal Gratefully?**
+
+`DriveConnectionStatus` menjawab: **apakah aplikasi sekarang mempunyai kredensial yang dapat dipakai untuk Drive?**
+
+Keduanya tidak boleh dianggap sama.
+
+### 5.2 Data auth yang dipersist
+
+Zustand menyimpan state di memory, sedangkan helper cookie mempersist:
+
+| Cookie | Isi |
+| --- | --- |
+| `auth-user` | Profil lokal pengguna. |
+| `thisisjustarandomstring` | OAuth access token. |
+| `access-token-expires-at` | Waktu kedaluwarsa token dalam milidetik. |
+
+Implementasi juga dapat memigrasikan nilai expiry lama dari `user.exp` yang berbentuk detik.
+
+Karena cookie dibuat melalui JavaScript, cookie token tidak `HttpOnly`. Pahami ini sebagai risiko XSS, bukan sebagai pola keamanan ideal untuk semua produk.
+
+### 5.3 Scope OAuth
 
 ```ts
 const GOOGLE_SCOPE = [
@@ -88,222 +136,465 @@ const GOOGLE_SCOPE = [
 ].join(' ')
 ```
 
-`src/services/google-token.service.ts` owns token acquisition:
+Scope identitas digunakan untuk user-info. Scope `drive.appdata` hanya memberi akses ke data privat aplikasi, bukan seluruh My Drive.
 
-- loads or reuses the GIS client;
-- caches one in-flight token request so concurrent callers do not open multiple prompts;
-- considers a token invalid in its final 60 seconds;
-- stores `accessToken` and `expiresAt` together through `auth-store`;
-- clears unavailable/revoked credentials and exposes `authenticated`, `reauthorizing`, `reconnection-required`, or `unauthenticated` status.
+### 5.4 Login pertama
 
-The persisted profile (`auth.user`) is the local application session; the short-lived Drive token is separate. If a profile exists but the token is absent or expired, the user remains in the local journal and Drive is `reconnection-required`.
+```mermaid
+sequenceDiagram
+    actor User as Pengguna
+    participant UI as Auth UI
+    participant Token as Google token service
+    participant GIS as Google Identity Services
+    participant Info as Google user-info
+    participant Store as Zustand/cookie
 
-Background Drive operations call token acquisition with `interactive: false`. GIS is invoked with `prompt: 'none'`, so silent recovery either succeeds without UI or fails and marks Drive as requiring reconnection. Only the Google sign-in and Settings **Reconnect Google** button call the `interactive: true` path, which may present the account chooser.
+    User->>UI: Klik Sign in with Google
+    UI->>Token: signInWithGoogle()
+    Token->>GIS: requestAccessToken(select_account)
+    GIS-->>Token: access_token + expires_in
+    Token->>Store: simpan token dan expiry
+    Token->>Info: GET profile dengan Bearer token
+    Info-->>Token: sub, email, name, picture
+    Token->>Store: simpan profil dan connected
+    Token-->>UI: login berhasil
+```
 
-`src/services/drive.service.ts` is the only Drive HTTP boundary. It adds the bearer token, converts network/API failures to `DriveServiceError`, and handles a Drive `401` by invalidating the token, attempting one **non-interactive** replacement token, and retrying the request once. A silent recovery failure aborts the operation without opening GIS UI; it does not retry `403` responses as an authorization loop.
+Token client menyimpan satu `pendingTokenRequest`. Jadi, request bersamaan tidak membuka beberapa popup.
 
-The user profile, token, and expiry are persisted in browser cookies by `src/stores/auth-store.ts`. Because JavaScript-written cookies are not `HttpOnly`, the token is exposed to any successful XSS attack. `VITE_GOOGLE_CLIENT_ID` is public configuration, but no Google client secret belongs in this frontend. Deploy with a restrictive Content Security Policy and standard XSS defenses.
+### 5.5 Validitas token
 
-## Local data model
+`isAccessTokenValid()` memerlukan:
 
-`src/db/db.ts` opens the `gratefully-journal` IndexedDB database at version 2.
+- token tidak kosong;
+- expiry tersedia;
+- waktu sekarang masih lebih awal dari `expiresAt - 60 detik`.
 
-| Object store | Key | Contents |
-| --- | --- | --- |
-| `entries` | `id` | Active records, deletion tombstones, and local-only backup state. It has a non-unique `date` index. |
-| `metadata` | `key` | The single `sync` record describing local and observed remote sync state. |
+`getValidAccessToken()` tidak pernah membuka popup. Jika token tidak tersedia, ia membatalkan kredensial Drive dan melempar `AuthRequiredError`.
 
-### Journal entries
+Tidak ada refresh token dan tidak ada silent token refresh pada implementasi terbaru.
 
-`src/types/gratefully.ts` defines the local entry contract:
+### 5.6 Reconnect
+
+`reconnectGoogleDrive()` hanya dapat dipakai jika profil lokal tersedia. Fungsi membuka account chooser dan memastikan `profile.sub` sama dengan `user.accountNo`.
+
+Tujuannya agar jurnal akun A tidak dikirim ke Drive akun B.
+
+Jika popup dibatalkan atau akun salah dipilih:
+
+- koneksi Drive kembali `disconnected`;
+- sesi lokal tetap `authenticated`;
+- jurnal lokal tetap tersedia.
+
+### 5.7 Logout
+
+Logout mencoba revoke token, kemudian membersihkan profil, token, dan expiry lokal. Kegagalan request revoke tidak menghalangi logout lokal.
+
+### Latihan
+
+- Gambarkan perbedaan kondisi “logout” dan “Drive disconnected”.
+- Baca test reconnect akun yang salah dan jelaskan mengapa perbandingan memakai `sub`, bukan email.
+- Jelaskan mengapa `VITE_GOOGLE_CLIENT_ID` boleh berada di frontend, tetapi client secret tidak boleh.
+
+## 6. Tahap 3 — pahami IndexedDB
+
+Baca:
+
+1. `src/types/gratefully.ts`
+2. `src/db/db.ts`
+3. `src/db/request.ts`
+4. `src/db/entries.repository.ts`
+5. `src/db/metadata.repository.ts`
+
+### 6.1 Schema database
+
+```text
+Nama    : gratefully-journal
+Versi   : 2
+Store   : entries, metadata
+```
+
+`entries` memakai `id` sebagai key dan mempunyai index `date` non-unik. `metadata` memakai `key` sebagai key.
+
+`requestToPromise()` mengubah callback `IDBRequest` menjadi Promise agar repository dapat ditulis dengan `async`/`await`.
+
+### 6.2 Bentuk entry
 
 ```ts
 type GratefullyEntry = {
   id: string
-  date: string                 // YYYY-MM-DD
+  date: string
   content: string
-  createdAt: string            // ISO timestamp
-  updatedAt: string            // conflict-resolution timestamp
-  deletedAt: string | null     // a non-null value is a tombstone
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
   syncStatus: 'synced' | 'pending'
   pendingMonths?: string[]
   previousDate?: string | null
 }
 ```
 
-`syncStatus`, `pendingMonths`, and `previousDate` exist only locally and are never serialized into Drive files.
+Bedakan field domain dan field lokal sinkronisasi:
 
-`src/db/entries.repository.ts` is the persistence boundary:
+- field yang dikirim ke Drive: `id`, `date`, `content`, `createdAt`, `updatedAt`, `deletedAt`;
+- field lokal saja: `syncStatus`, `pendingMonths`, `previousDate`.
 
-- **Create** validates the date, creates a UUID/timestamps, and writes a `pending` entry.
-- **Update** preserves `id` and `createdAt`, changes `updatedAt`, and marks the entry pending.
-- **Delete** is a soft delete: it writes `deletedAt` instead of removing the record.
-- **Move between months** remembers both the old and new month in `pendingMonths`. During backup, a synthetic tombstone is written to the old month so the record cannot reappear there remotely.
-- **Acknowledge** changes a pending snapshot to `synced` only if its `updatedAt` still matches. An edit made while Drive I/O was in progress therefore stays pending for the next backup.
+### 6.3 Lifecycle entry
 
-Every local mutation calls `markLocalChange()` in `metadata.repository.ts`. That updates `lastLocalChangeAt` and dispatches the browser event `gratefully:local-change`. The current application uses this event to refresh displayed sync state; it does **not** automatically upload changes.
-
-### Sync metadata
-
-```ts
-type SyncMetadata = {
-  key: 'sync'
-  schemaVersion: number
-  lastSyncedAt: string | null
-  lastLocalChangeAt: string | null
-  remoteMonths: Record<string, string>
-}
+```mermaid
+stateDiagram-v2
+    [*] --> Pending: create
+    Synced --> Pending: edit
+    Synced --> Pending: soft delete
+    Pending --> Pending: edit lagi saat upload
+    Pending --> Synced: backup dan snapshot tetap sama
 ```
 
-`remoteMonths` maps a `YYYY-MM` key to the remote monthly file’s last observed logical `updatedAt`. It lets a startup refresh download only the months that changed since the prior refresh.
+Create/update/delete selalu memanggil `markLocalChange()`. Fungsi itu memperbarui `lastLocalChangeAt` dan mengirim event `gratefully:local-change`.
 
-## Drive storage format
+### 6.4 Soft delete
 
-Google Drive files live in the signed-in account’s `appDataFolder`, which is private application storage rather than a normal file visible in My Drive.
+Delete tidak membuang record. Repository mengisi `deletedAt` dan mempertahankan record sebagai tombstone.
 
-The active format is partitioned by month:
+Alasannya: perangkat lain harus menerima bukti bahwa record telah dihapus. UI normal menyembunyikan tombstone dengan memeriksa `deletedAt === null`.
+
+### 6.5 Pindah bulan
+
+Jika tanggal diubah dari Agustus ke September:
+
+- `pendingMonths` menyimpan Agustus dan September;
+- `previousDate` menyimpan tanggal Agustus;
+- backup membuat tombstone untuk bulan lama;
+- entry aktif ditulis ke bulan baru.
+
+### 6.6 Acknowledgment aman
+
+`markEntriesSynced()` hanya mengubah entry menjadi `synced` jika `updatedAt` sekarang sama dengan snapshot yang mulai di-upload.
+
+Jika pengguna mengedit entry saat request Drive masih berjalan, timestamp berubah. Entry tetap `pending` agar perubahan terbaru tidak dianggap sudah dibackup.
+
+### Latihan
+
+- Gunakan DevTools > Application > IndexedDB dan periksa kedua object store.
+- Buat entry, edit, lalu hapus; amati perubahan `syncStatus`, `updatedAt`, dan `deletedAt`.
+- Pindahkan entry ke bulan lain dan periksa `pendingMonths` serta `previousDate`.
+
+## 7. Tahap 4 — pahami format Google Drive
+
+Baca:
+
+1. `src/sync/mapper.ts`
+2. `src/utils/driveHelpers.ts`
+3. `src/sync/mapper.test.ts`
+
+Format aktif:
 
 ```text
 metadata.json
-
-gratitude_entries_2026-09.json
-gratitude_entries_2026-10.json
-...
+gratitude_entries_YYYY-MM.json
 ```
 
-`metadata.json` is the remote index:
+### 7.1 Remote metadata
 
 ```json
 {
   "version": 1,
-  "updatedAt": "2026-09-15T10:00:00.000Z",
+  "updatedAt": "2026-09-18T10:00:00.000Z",
   "months": {
-    "2026-09": { "updatedAt": "2026-09-15T10:00:00.000Z" }
+    "2026-09": { "updatedAt": "2026-09-18T10:00:00.000Z" }
   }
 }
 ```
 
-Each monthly file contains only records for its month:
+`remoteMonths` lokal menyimpan timestamp yang terakhir diamati. Dengan membandingkan timestamp ini, startup refresh hanya mengunduh bulan yang berubah.
+
+### 7.2 File bulanan
 
 ```json
 {
   "version": 1,
   "month": "2026-09",
-  "updatedAt": "2026-09-15T10:00:00.000Z",
-  "entries": [
-    {
-      "id": "7d6...",
-      "date": "2026-09-15",
-      "content": "I am grateful for my family.",
-      "createdAt": "2026-09-15T09:00:00.000Z",
-      "updatedAt": "2026-09-15T10:00:00.000Z",
-      "deletedAt": null
-    }
-  ]
+  "updatedAt": "2026-09-18T10:00:00.000Z",
+  "entries": []
 }
 ```
 
-`src/sync/mapper.ts` validates each remote document before repository writes. Invalid shapes, dates, timestamps, duplicate IDs, or entries in the wrong month throw an error; malformed remote data cannot be interpreted as an empty database.
+Mapper bertugas:
 
-## Synchronization protocol
+- menghapus field lokal sebelum upload;
+- menambahkan kembali default lokal setelah download;
+- mengurutkan entry berdasarkan ID sebelum serialisasi;
+- menolak struktur, tanggal, timestamp, bulan, atau ID duplikat yang tidak valid.
 
-The active protocol has two intentionally distinct operations in `src/sync/sync.service.ts`.
+Validasi penting karena file remote merupakan input eksternal. Data rusak tidak boleh diperlakukan sebagai daftar kosong.
 
-### 1. Startup refresh: Drive to IndexedDB only
+### Latihan
 
-`useSync()` starts `refreshFromGoogleDrive()` when a persisted user is present and the browser is online. Local IndexedDB has already rendered, so refresh cannot block the journal UI. If the Drive token has expired, the refresh performs only silent GIS recovery; an interaction-required result stops the refresh and leaves the Settings UI in the reconnection-required state without showing an error or account chooser.
+- Baca test mapper untuk kasus dokumen valid dan invalid.
+- Tambahkan test contoh entry yang berada di bulan yang salah.
+- Jelaskan mengapa `syncStatus` tidak boleh disimpan di Drive.
 
-```mermaid
-flowchart TD
-    Start[Signed-in app starts online] --> Legacy[Run legacy migration if needed]
-    Legacy --> Index[Load metadata.json]
-    Index --> Exists{Metadata exists?}
-    Exists -- No --> Done[No remote refresh]
-    Exists -- Yes --> Changed[Compare remote months with local remoteMonths]
-    Changed --> Download[Download changed monthly files]
-    Download --> Validate[Validate and map file]
-    Validate --> Merge[Merge remote records into IndexedDB]
-    Merge --> Remember[Store observed month timestamps]
-    Remember --> Done
+## 8. Tahap 5 — pahami Google Drive REST API
+
+Baca:
+
+1. `src/types/drive.ts`
+2. `src/services/drive.service.ts`
+3. `src/services/drive.service.test.ts`
+
+Drive service memakai `fetch` langsung.
+
+| Operasi | Method dan endpoint |
+| --- | --- |
+| Cari file | `GET https://www.googleapis.com/drive/v3/files?...&spaces=appDataFolder` |
+| Unduh isi | `GET /drive/v3/files/{id}?alt=media` |
+| Buat JSON | `POST https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart` |
+| Update JSON | `PATCH https://www.googleapis.com/upload/drive/v3/files/{id}?uploadType=multipart` |
+
+Create menyertakan parent `appDataFolder`. Update tidak perlu mengubah parent.
+
+### 8.1 Lapisan error
+
+`DriveServiceError` mempunyai kode:
+
+- `AUTHENTICATION`;
+- `NOT_FOUND`;
+- `NETWORK`;
+- `INVALID_RESPONSE`;
+- `API`.
+
+Saat respons `401`, access token dibatalkan. Request tidak otomatis diulang dan tidak membuka popup Google. Reconnect harus dipicu pengguna.
+
+### 8.2 Hal penting saat membaca `findFileByName()`
+
+- query hanya mencari file yang belum di-trash;
+- `spaces=appDataFolder` membatasi lokasi;
+- pagination ditangani;
+- respons Drive divalidasi;
+- jika ada duplikat, file paling lama dipilih.
+
+### Latihan
+
+- Buka Network tab saat backup dan temukan request list, download, POST, atau PATCH.
+- Periksa bahwa header memakai Bearer token tanpa menyalin token ke catatan/log.
+- Jelaskan perbedaan metadata response Drive dan isi file dengan `alt=media`.
+
+## 9. Tahap 6 — pahami merge dan sinkronisasi
+
+Baca:
+
+1. `src/sync/merge.ts`
+2. `src/sync/sync.service.ts`
+3. `src/hooks/use-sync.ts`
+4. `src/features/settings/container/components/data-sync-section.tsx`
+
+### 9.1 Merge
+
+`mergeEntries(local, remote)` menggabungkan berdasarkan `id` dan memilih `updatedAt` yang lebih baru. Jika timestamp sama, lokal dipertahankan.
+
+Ini adalah last-write-wins untuk keseluruhan entry. Tidak ada merge isi teks.
+
+### 9.2 Startup refresh
+
+Syarat:
+
+- `authStatus === 'authenticated'`;
+- `driveConnectionStatus === 'connected'`;
+- `navigator.onLine`.
+
+Langkah:
+
+1. tunggu/catat satu `activeRefresh`;
+2. migrasikan file legacy jika diperlukan;
+3. baca `metadata.json`;
+4. bandingkan timestamp remote dengan `remoteMonths` lokal;
+5. unduh file bulan yang berubah;
+6. validasi dan merge ke IndexedDB;
+7. simpan timestamp remote terbaru;
+8. kirim `gratefully:sync-complete` jika ada bulan berubah.
+
+Refresh tidak meng-upload entry pending.
+
+### 9.3 Backup manual
+
+Langkah:
+
+1. tolak operasi jika offline;
+2. tunggu startup refresh yang masih aktif;
+3. migrasikan format legacy jika perlu;
+4. baca seluruh entry pending;
+5. tentukan bulan yang terdampak;
+6. baca file remote untuk setiap bulan;
+7. gabungkan data lokal dan remote;
+8. buat atau update file bulanan;
+9. buat atau update `metadata.json`;
+10. acknowledge snapshot pending;
+11. simpan metadata lokal;
+12. kirim `gratefully:sync-complete`.
+
+Satu tab memakai `activeSync` agar backup tidak overlap. Mekanisme ini belum mengunci tab/perangkat lain.
+
+### 9.4 Mengapa metadata ditulis terakhir?
+
+`metadata.json` menjadi indeks bahwa versi file bulan tertentu sudah tersedia. Dengan menulis file bulan lebih dahulu, indeks tidak menunjuk ke update yang belum selesai dibuat.
+
+Jika file bulan berhasil tetapi metadata gagal, entry belum di-acknowledge sebagai `synced`. Backup berikutnya dapat mencoba lagi.
+
+### Latihan
+
+- Buat dua versi entry dengan ID sama dan timestamp berbeda, lalu uji `mergeEntries()`.
+- Simulasikan edit ketika upload berjalan dan pastikan entry tetap pending.
+- Jelaskan risiko dua perangkat menekan backup pada waktu yang hampir sama.
+
+## 10. Tahap 7 — pahami migrasi legacy
+
+Format lama adalah satu file `gratitude_db.json`. Migrasi hanya berjalan jika `metadata.json` belum ada.
+
+Urutan migrasi:
+
+1. baca dan validasi file lama;
+2. kelompokkan entry berdasarkan bulan;
+3. merge dengan file bulanan yang sudah ada;
+4. tulis file-file bulan;
+5. tulis `metadata.json` paling akhir;
+6. pertahankan file legacy sebagai backup.
+
+Proses didesain agar relatif aman diulang setelah kegagalan parsial.
+
+Jangan keliru dengan helper kompatibilitas `journal_db.json` di `drive.service.ts`; helper itu bukan protokol gratitude bulanan yang aktif.
+
+## 11. Event dan state UI
+
+| Event | Arti |
+| --- | --- |
+| `gratefully:local-change` | IndexedDB berubah karena aksi lokal. |
+| `gratefully:sync-complete` | Refresh atau backup berhasil menyelesaikan perubahan data. |
+
+`useSync()` mendengarkan event tersebut untuk memuat ulang:
+
+- jumlah pending;
+- waktu backup terakhir.
+
+Feature jurnal/journey juga dapat memuat ulang daftar setelah sync complete. IndexedDB tetap menjadi sumber tampilan UI.
+
+Status hook:
+
+```ts
+type SyncStatus = 'idle' | 'syncing' | 'synced' | 'offline' | 'error'
 ```
 
-A refresh is download-only: it never uploads pending local edits. A newly authorized Drive account remains empty until the user selects **Back up now** in Settings. While Drive is disconnected, local creates, edits, and deletes continue to be stored as `pending`; they are acknowledged only after a successful manual backup following reconnection.
+Error autentikasi Drive dikembalikan ke kondisi idle/disconnected agar UI menawarkan reconnect, sedangkan error cloud lainnya ditampilkan sebagai error.
 
-### 2. Manual backup: pending IndexedDB records to Drive
+## 12. Keterbatasan yang wajib diketahui
 
-The Settings data-sync section calls `syncNow()` through `useSync().sync()`. Concurrent manual requests in one tab share the same `activeSync` promise.
+1. **Token berada dalam cookie JavaScript**, bukan cookie `HttpOnly`.
+2. **Tidak ada refresh token**; pengguna harus reconnect setelah token tidak valid.
+3. **Last-write-wins bergantung pada jam perangkat**.
+4. **Tidak ada ETag/`If-Match`**, sehingga race antarperangkat masih mungkin.
+5. **Lock hanya satu tab**, bukan cross-tab/cross-device.
+6. **Tombstone belum dibersihkan** dengan retention policy.
+7. **Data Drive belum dienkripsi client-side**.
+8. **IndexedDB belum terlihat dipartisi per akun** dalam bentuk entry; pergantian akun pada browser yang sama perlu dipikirkan dengan hati-hati.
+9. **Backup manual berarti data pending belum aman di cloud** sampai pengguna menekan tombol dan proses berhasil.
+10. **Menghapus site data/browser sebelum backup dapat menghilangkan jurnal lokal**.
 
-```mermaid
-flowchart TD
-    Start[Back up now] --> Online{Browser online?}
-    Online -- No --> Offline[Return SyncOfflineError]
-    Online -- Yes --> Pending[Read pending local entries]
-    Pending --> Any{Any pending?}
-    Any -- No --> Done[Nothing to upload]
-    Any -- Yes --> Legacy[Run legacy migration if needed]
-    Legacy --> Index[Load or create remote metadata]
-    Index --> Months[Determine affected months]
-    Months --> Remote[Read each remote monthly file]
-    Remote --> Merge[Merge local and remote records by ID]
-    Merge --> WriteMonth[Create or update each affected monthly file]
-    WriteMonth --> WriteIndex[Create or update metadata.json]
-    WriteIndex --> Acknowledge[Mark unchanged snapshots as synced]
-    Acknowledge --> Event[Dispatch gratefully:sync-complete]
+## 13. Jalur belajar yang disarankan
+
+### Level pemula
+
+1. Jalankan aplikasi dan kenali route.
+2. Buat/edit/hapus jurnal sambil melihat IndexedDB.
+3. Pelajari tipe `GratefullyEntry`.
+4. Ikuti alur dari component ke repository.
+
+### Level menengah
+
+1. Ikuti alur login dari tombol sampai cookie.
+2. Ikuti `useSync()` ke `sync.service.ts`.
+3. Pelajari mapper dan format file Drive.
+4. Jalankan test auth, Drive, dan mapper.
+
+### Level lanjutan
+
+1. Analisis race condition antarperangkat.
+2. Rancang ETag/optimistic concurrency.
+3. Rancang partisi data lokal per akun.
+4. Rancang enkripsi client-side dan manajemen kunci.
+5. Rancang retention tombstone yang tetap aman untuk perangkat lama.
+
+## 14. Checklist ketika mengubah kode
+
+### Jika mengubah IndexedDB
+
+- naikkan versi database jika schema berubah;
+- tambahkan migration di `onupgradeneeded`;
+- pertahankan data pengguna lama;
+- uji database baru dan database hasil upgrade.
+
+### Jika mengubah bentuk entry
+
+- update tipe lokal;
+- update repository normalization;
+- update mapper upload/download;
+- update validasi remote;
+- pikirkan kompatibilitas file lama;
+- tambah test.
+
+### Jika mengubah OAuth
+
+- gunakan scope seminimal mungkin;
+- jangan masukkan client secret ke frontend;
+- jangan buka popup dari background effect;
+- pertahankan pemisahan sesi lokal dan koneksi Drive;
+- uji login, cancel, expiry, 401, reconnect, akun salah, dan logout.
+
+### Jika mengubah sync
+
+- jangan menganggap JSON rusak sebagai data kosong;
+- jangan acknowledge entry sebelum metadata remote berhasil;
+- pertahankan pengecekan snapshot `updatedAt`;
+- uji create, update, delete, pindah bulan, offline, dan kegagalan parsial;
+- pertimbangkan race cross-tab dan cross-device.
+
+## 15. Perintah validasi
+
+```bash
+pnpm test
+pnpm build
+pnpm lint
+pnpm format:check
 ```
 
-Only months named by the pending records are uploaded. This avoids reading and rewriting the entire journal for a small local change.
+Untuk perubahan kecil, mulai dari test yang paling dekat dengan modul yang diubah, kemudian jalankan validasi yang lebih luas.
 
-### Conflict and deletion rules
+## 16. Pertanyaan evaluasi mandiri
 
-`src/sync/merge.ts` merges records by stable `id` and chooses the later `updatedAt` value. On equal timestamps it keeps the local value because local entries are processed first.
+Jika dapat menjawab pertanyaan berikut, Anda sudah memahami inti arsitektur:
 
-- This is whole-entry, last-write-wins—not a text-level merge.
-- Tombstones take part in the same comparison, so a newer deletion propagates across devices.
-- Device clock skew can make an older human edit win or lose incorrectly.
-- A single-tab in-flight guard does not prevent races between tabs or devices. The Drive layer does not currently use ETags or `If-Match` preconditions.
+1. Mengapa UI membaca IndexedDB, bukan Drive secara langsung?
+2. Mengapa pengguna tetap login saat token Drive kedaluwarsa?
+3. Mengapa `getValidAccessToken()` tidak membuka popup?
+4. Mengapa delete harus menjadi tombstone?
+5. Mengapa pemindahan tanggal antarbulan perlu menulis dua file bulan?
+6. Mengapa startup refresh tidak meng-upload data pending?
+7. Mengapa file bulanan ditulis sebelum `metadata.json`?
+8. Bagaimana edit saat upload berlangsung tetap ditandai pending?
+9. Apa kelemahan last-write-wins berbasis waktu perangkat?
+10. Mengapa `drive.appdata` lebih aman daripada scope Drive penuh untuk kebutuhan ini?
 
-## Legacy Drive migration
+## 17. Ringkasan file inti
 
-The former active format was one `gratitude_db.json` file. `migrateLegacyIfNeeded()` is a one-time compatibility bridge:
-
-1. If `metadata.json` already exists, no migration occurs.
-2. If the legacy file exists, its validated records are grouped by month.
-3. Each monthly file is created or merged with any existing monthly file.
-4. `metadata.json` is written only after monthly files are written.
-5. The legacy file is retained as a backup; it is never deleted by the migration.
-
-This ordering makes retrying a partially completed migration safe and avoids discarding the only remote copy.
-
-## Events and UI refreshes
-
-| Event | Producer | Consumers | Meaning |
-| --- | --- | --- | --- |
-| `gratefully:local-change` | `markLocalChange()` | `useSync()` | Local data changed; reload pending count and local sync metadata. |
-| `gratefully:sync-complete` | Successful refresh or backup | `useSync()`, grateful and journey feature hooks | Reload sync state and entry lists from IndexedDB. |
-
-The grateful and journey screens always read local active entries. Tombstones remain in IndexedDB for sync but are omitted from normal lists.
-
-## Recommended reading order
-
-1. `src/types/gratefully.ts` — entry and metadata contracts.
-2. `src/db/db.ts`, `src/db/request.ts` — IndexedDB setup and promise conversion.
-3. `src/db/entries.repository.ts` — local CRUD, pending state, and date moves.
-4. `src/db/metadata.repository.ts` — metadata and cross-layer events.
-5. `src/sync/mapper.ts` and `src/sync/merge.ts` — remote contracts and conflict rules.
-6. `src/services/google-token.service.ts` — GIS and token lifecycle.
-7. `src/services/drive.service.ts` — authenticated Drive requests and multipart uploads.
-8. `src/sync/sync.service.ts` — refresh, backup, and legacy migration orchestration.
-9. `src/hooks/use-sync.ts` — lifecycle behavior and user-triggered backup state.
-10. `src/features/settings/container/components/data-sync-section.tsx` — the backup and reconnect UI.
-11. `src/sync/mapper.test.ts` and `src/stores/auth-store.test.ts` — executable examples for data mapping and credential persistence.
-
-## Operational checklist
-
-- Configure `VITE_GOOGLE_CLIENT_ID` and authorized JavaScript origins in Google Cloud.
-- Enable the Google Drive API and request only `drive.appdata` for journal storage.
-- Test first backup, cold-start refresh, offline local writes, and reconnection.
-- Test a move across months, deletion propagation, concurrent device edits, and a malformed remote JSON document.
-- Test an expired/revoked token: local journal access must remain available and Drive should offer reconnection.
-- Preserve the IndexedDB versioning and migration path when changing local schema.
-- Preserve validation before writes and the acknowledgment-by-snapshot rule when changing sync behavior.
-- Consider ETags/preconditions, a stronger conflict model, retention for tombstones, and optional client-side encryption before scaling the product.
+| Urutan baca | File | Fokus |
+| --- | --- | --- |
+| 1 | `src/types/gratefully.ts` | Model data. |
+| 2 | `src/db/db.ts` | Schema IndexedDB. |
+| 3 | `src/db/entries.repository.ts` | CRUD, pending, tombstone. |
+| 4 | `src/db/metadata.repository.ts` | Metadata dan local-change event. |
+| 5 | `src/stores/auth-store.ts` | Sesi, cookie, status Drive. |
+| 6 | `src/services/google-token.service.ts` | GIS, token, login, reconnect, logout. |
+| 7 | `src/services/drive.service.ts` | Request Google Drive API. |
+| 8 | `src/sync/mapper.ts` | Kontrak dan validasi JSON remote. |
+| 9 | `src/sync/merge.ts` | Resolusi konflik. |
+| 10 | `src/sync/sync.service.ts` | Refresh, backup, migrasi. |
+| 11 | `src/hooks/use-sync.ts` | Integrasi lifecycle React. |
+| 12 | `src/features/settings/container/components/data-sync-section.tsx` | Pengalaman pengguna sync/reconnect. |
