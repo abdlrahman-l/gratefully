@@ -154,6 +154,17 @@ export const id = {
     light: 'Terang',
     dark: 'Gelap',
     dataSync: 'Data & Sinkronisasi',
+    dailyReminder: 'Pengingat Harian',
+    dailyReminderDescription:
+      'Dapatkan pengingat ringan setiap malam untuk meluangkan waktu mensyukuri hari ini.',
+    enableNotifications: 'Aktifkan notifikasi',
+    enablingNotifications: 'Mengaktifkan notifikasi…',
+    notificationsEnabled: 'Notifikasi aktif',
+    dailyReminderTime: 'Setiap hari pukul 20.00',
+    notificationsBlocked: 'Notifikasi diblokir melalui pengaturan browser.',
+    notificationsUnsupported: 'Browser ini tidak mendukung notifikasi.',
+    notificationsError:
+      'Notifikasi belum dapat diaktifkan. Silakan coba lagi nanti.',
     connected: 'Terhubung',
     lastSynced: 'Sinkronisasi terakhir: Baru saja',
     pendingBackup_other: '{{count}} catatan belum dicadangkan',

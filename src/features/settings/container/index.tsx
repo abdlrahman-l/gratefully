@@ -1,5 +1,6 @@
 import { AboutSection } from './components/about-section'
 import { AccountSection } from './components/account-section'
+import { DailyReminderSection } from './components/daily-reminder-section'
 import { DataSyncSection } from './components/data-sync-section'
 import { LanguageSection } from './components/language-section'
 import { SettingsHeader } from './components/settings-header'
@@ -11,6 +12,7 @@ export function SettingsContainer() {
       <SettingsHeader />
       <AccountSection />
       <LanguageSection />
+      <DailyReminderSection />
       <DataSyncSection />
       <AboutSection />
       <SignOutButton />

@@ -156,6 +156,17 @@ export const en = {
     light: 'Light',
     dark: 'Dark',
     dataSync: 'Data & Sync',
+    dailyReminder: 'Daily Reminder',
+    dailyReminderDescription:
+      "Receive a gentle reminder every evening to reflect on what you're grateful for.",
+    enableNotifications: 'Enable notifications',
+    enablingNotifications: 'Enabling notifications…',
+    notificationsEnabled: 'Notifications enabled',
+    dailyReminderTime: 'Every day at 8:00 PM',
+    notificationsBlocked: 'Notifications are blocked in your browser settings.',
+    notificationsUnsupported: "Notifications aren't supported by this browser.",
+    notificationsError:
+      'Unable to enable notifications right now. Please try again later.',
     connected: 'Connected',
     lastSynced: 'Last synced: Just now',
     pendingBackup_one: '{{count}} entry has not been backed up yet',
