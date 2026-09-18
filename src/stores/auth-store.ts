@@ -5,12 +5,8 @@ const ACCESS_TOKEN = 'thisisjustarandomstring'
 const AUTH_USER = 'auth-user'
 const ACCESS_TOKEN_EXPIRES_AT = 'access-token-expires-at'
 
-export type AuthStatus =
-  | 'initializing'
-  | 'authenticated'
-  | 'reauthorizing'
-  | 'reconnection-required'
-  | 'unauthenticated'
+export type AuthStatus = 'initializing' | 'authenticated' | 'unauthenticated'
+export type DriveConnectionStatus = 'connected' | 'disconnected' | 'connecting'
 
 export interface AuthUser {
   accountNo: string
@@ -28,8 +24,14 @@ interface AuthState {
     accessToken: string
     expiresAt: number | null
     status: AuthStatus
-    setCredentials: (accessToken: string, expiresAt: number) => void
+    driveConnectionStatus: DriveConnectionStatus
+    setCredentials: (
+      accessToken: string,
+      expiresAt: number,
+      driveConnectionStatus?: DriveConnectionStatus
+    ) => void
     setStatus: (status: AuthStatus) => void
+    setDriveConnectionStatus: (status: DriveConnectionStatus) => void
     resetAccessToken: () => void
     reset: () => void
   }
@@ -59,15 +61,6 @@ export const useAuthStore = create<AuthState>()((set) => {
   // expiry timestamp used by the token lifecycle.
   const initExpiresAt =
     persistedExpiresAt ?? (initUser?.exp ? initUser.exp * 1000 : null)
-  const hasValidToken = Boolean(
-    initToken && initExpiresAt && Date.now() < initExpiresAt - 60_000
-  )
-
-  if (initToken && !hasValidToken) {
-    removeCookie(ACCESS_TOKEN)
-    removeCookie(ACCESS_TOKEN_EXPIRES_AT)
-  }
-
   return {
     auth: {
       user: initUser,
@@ -78,16 +71,24 @@ export const useAuthStore = create<AuthState>()((set) => {
           } else {
             removeCookie(AUTH_USER)
           }
-          return { ...state, auth: { ...state.auth, user } }
+          return {
+            ...state,
+            auth: {
+              ...state.auth,
+              user,
+              status: user ? 'authenticated' : 'unauthenticated',
+            },
+          }
         }),
-      accessToken: hasValidToken ? initToken : '',
-      expiresAt: hasValidToken ? initExpiresAt : null,
-      status: hasValidToken
-        ? 'authenticated'
-        : initUser
-          ? 'reconnection-required'
-          : 'unauthenticated',
-      setCredentials: (accessToken, expiresAt) =>
+      accessToken: initToken,
+      expiresAt: initExpiresAt,
+      status: 'initializing',
+      driveConnectionStatus: 'disconnected',
+      setCredentials: (
+        accessToken,
+        expiresAt,
+        driveConnectionStatus = 'connected'
+      ) =>
         set((state) => {
           setCookie(ACCESS_TOKEN, JSON.stringify(accessToken))
           setCookie(ACCESS_TOKEN_EXPIRES_AT, JSON.stringify(expiresAt))
@@ -97,7 +98,7 @@ export const useAuthStore = create<AuthState>()((set) => {
               ...state.auth,
               accessToken,
               expiresAt,
-              status: 'authenticated',
+              driveConnectionStatus,
             },
           }
         }),
@@ -105,6 +106,11 @@ export const useAuthStore = create<AuthState>()((set) => {
         set((state) => ({
           ...state,
           auth: { ...state.auth, status },
+        })),
+      setDriveConnectionStatus: (driveConnectionStatus) =>
+        set((state) => ({
+          ...state,
+          auth: { ...state.auth, driveConnectionStatus },
         })),
       resetAccessToken: () =>
         set((state) => {
@@ -116,9 +122,7 @@ export const useAuthStore = create<AuthState>()((set) => {
               ...state.auth,
               accessToken: '',
               expiresAt: null,
-              status: state.auth.user
-                ? 'reconnection-required'
-                : 'unauthenticated',
+              driveConnectionStatus: 'disconnected',
             },
           }
         }),
@@ -135,6 +139,7 @@ export const useAuthStore = create<AuthState>()((set) => {
               accessToken: '',
               expiresAt: null,
               status: 'unauthenticated',
+              driveConnectionStatus: 'disconnected',
             },
           }
         }),

@@ -16,7 +16,10 @@ type SyncState = {
 }
 
 export function useSync(): SyncState {
-  const user = useAuthStore((state) => state.auth.user)
+  const authStatus = useAuthStore((state) => state.auth.status)
+  const driveConnectionStatus = useAuthStore(
+    (state) => state.auth.driveConnectionStatus
+  )
   const [status, setStatus] = useState<SyncStatus>('idle')
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null)
   const [pendingCount, setPendingCount] = useState(0)
@@ -29,7 +32,12 @@ export function useSync(): SyncState {
   }, [])
 
   const sync = useCallback(async () => {
-    if (!user) return
+    const auth = useAuthStore.getState().auth
+    if (
+      auth.status !== 'authenticated' ||
+      auth.driveConnectionStatus !== 'connected'
+    )
+      return
     if (!navigator.onLine) { setStatus('offline'); return }
     setStatus('syncing')
     setError(null)
@@ -39,10 +47,14 @@ export function useSync(): SyncState {
       setStatus('synced')
     } catch (cause) {
       if (cause instanceof SyncOfflineError) { setStatus('offline'); return }
+      if (cause instanceof DriveServiceError && cause.code === 'AUTHENTICATION') {
+        setStatus('idle')
+        return
+      }
       setError(cause instanceof Error ? cause : new Error('Cloud sync failed.'))
       setStatus('error')
     }
-  }, [loadLocalState, user])
+  }, [loadLocalState])
 
   useEffect(() => {
     const initialLoad = window.setTimeout(() => void loadLocalState(), 0)
@@ -57,14 +69,19 @@ export function useSync(): SyncState {
   }, [loadLocalState])
 
   useEffect(() => {
-    if (!user || !navigator.onLine) return
+    if (
+      authStatus !== 'authenticated' ||
+      driveConnectionStatus !== 'connected' ||
+      !navigator.onLine
+    )
+      return
     // Local IndexedDB has already rendered. This is intentionally download-only.
     void refreshFromGoogleDrive().then(loadLocalState).catch((cause: unknown) => {
-      // An expired Drive credential is expected to require an explicit reconnect.
+      // The centralized auth layer handles invalid credentials and routing.
       if (cause instanceof SyncOfflineError || (cause instanceof DriveServiceError && cause.code === 'AUTHENTICATION')) return
       setError(cause instanceof Error ? cause : new Error('Cloud refresh failed.'))
     })
-  }, [loadLocalState, user])
+  }, [authStatus, driveConnectionStatus, loadLocalState])
 
   return { status, lastSyncedAt, pendingCount, error, sync }
 }

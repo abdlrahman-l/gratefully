@@ -1,7 +1,7 @@
 import { type QueryClient } from '@tanstack/react-query'
 import { createRootRouteWithContext, redirect } from '@tanstack/react-router'
-import { RootComponent } from '@/components/root-component'
 import { useAuthStore } from '@/stores/auth-store'
+import { RootComponent } from '@/components/root-component'
 import { GeneralError } from '@/features/errors/general-error'
 import { NotFoundError } from '@/features/errors/not-found-error'
 
@@ -9,11 +9,15 @@ export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
 }>()({
   beforeLoad: ({ location }) => {
-    const { user } = useAuthStore.getState().auth
+    const { status } = useAuthStore.getState().auth
 
-    // The persisted account identifies access to this device's local journal.
-    // Drive token validity is handled independently by background sync.
-    if (location.pathname !== '/auth' && !user) {
+    // Initialization is completed by RootComponent, which then invalidates the
+    // router so protected routes are evaluated with a settled auth status.
+    if (
+      location.pathname !== '/auth' &&
+      status !== 'initializing' &&
+      status !== 'authenticated'
+    ) {
       throw redirect({ to: '/auth' })
     }
   },

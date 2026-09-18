@@ -1,9 +1,9 @@
 import { CloudIcon, ShieldCheckIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'sonner'
+import { useState } from 'react'
 import { getCurrentLanguage } from '@/i18n'
-import { requestNewAccessToken } from '@/services/google-token.service'
 import { useSync } from '@/hooks/use-sync'
+import { reconnectGoogleDrive } from '@/services/google-token.service'
 import { useAuthStore } from '@/stores/auth-store'
 import { Button } from '@/components/ui/button'
 import { SectionTitle } from './settings-primitives'
@@ -11,10 +11,12 @@ import { SectionTitle } from './settings-primitives'
 export function DataSyncSection() {
   const { t } = useTranslation()
   const language = getCurrentLanguage()
-  const authStatus = useAuthStore((state) => state.auth.status)
-  const isConnected = authStatus === 'authenticated'
-  const isReauthorizing = authStatus === 'reauthorizing'
-  const needsReconnection = authStatus === 'reconnection-required'
+  const driveConnectionStatus = useAuthStore(
+    (state) => state.auth.driveConnectionStatus
+  )
+  const [reconnectError, setReconnectError] = useState<string | null>(null)
+  const isConnected = driveConnectionStatus === 'connected'
+  const isConnecting = driveConnectionStatus === 'connecting'
   const { status, pendingCount, lastSyncedAt, error, sync } = useSync()
 
   const backupNow = async () => {
@@ -22,15 +24,17 @@ export function DataSyncSection() {
   }
 
   const reconnect = async () => {
+    setReconnectError(null)
     try {
-      await requestNewAccessToken({ interactive: true, prompt: 'consent' })
-      toast.success('Google Drive reconnected')
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : 'Unable to reconnect Google.'
+      await reconnectGoogleDrive()
+      await sync()
+    } catch (cause) {
+      setReconnectError(
+        cause instanceof Error ? cause.message : 'Unable to reconnect Google Drive.'
       )
     }
   }
+
 
   return (
     <section className='space-y-3' aria-label={t('settings.dataSync')}>
@@ -52,17 +56,17 @@ export function DataSyncSection() {
                   className={`size-2 rounded-full ${isConnected ? 'bg-primary' : 'bg-muted-foreground'}`}
                   aria-hidden
                 />
-                {isConnected
-                  ? t('settings.connected')
-                  : isReauthorizing
-                    ? 'Reconnecting…'
-                    : needsReconnection
-                      ? 'Reconnection required'
-                      : 'Disconnected'}
+                {isConnecting
+                  ? 'Connecting…'
+                  : isConnected
+                    ? t('settings.connected')
+                    : 'Disconnected'}
               </span>
             </div>
             <p className='mt-2 font-body-md text-sm leading-6 text-muted-foreground'>
-              {t('settings.storageDescription')}
+              {isConnected
+                ? t('settings.storageDescription')
+                : 'Your journals are still saved on this device. Reconnect to sync them with Google Drive.'}
             </p>
             <p className='mt-3 font-label text-xs font-medium text-muted-foreground'>
               {pendingCount
@@ -75,30 +79,28 @@ export function DataSyncSection() {
                     })
                   : t('settings.lastSynced')}
             </p>
-            {error && <p className='mt-1 text-xs text-destructive'>{error.message}</p>}
+            {(error || reconnectError) && (
+              <p className='mt-1 text-xs text-destructive'>
+                {reconnectError ?? error?.message}
+              </p>
+            )}
+            {!isConnected && (
+              <Button
+                className='mt-3'
+                size='sm'
+                variant='outline'
+                disabled={isConnecting}
+                onClick={() => void reconnect()}
+              >
+                {isConnecting ? 'Connecting…' : 'Reconnect'}
+              </Button>
+            )}
             {isConnected && (
               <Button className='mt-3' size='sm' variant='outline' disabled={status === 'syncing'} onClick={() => void backupNow()}>
                 {status === 'syncing' ? 'Backing up…' : 'Back up now'}
               </Button>
             )}
-            {!isConnected && (
-              <>
-                {needsReconnection && (
-                  <p className='mt-3 text-xs text-muted-foreground'>
-                    Google Drive needs to be reconnected before backup.
-                  </p>
-                )}
-                <Button
-                className='mt-3'
-                size='sm'
-                variant='outline'
-                disabled={isReauthorizing}
-                onClick={() => void reconnect()}
-              >
-                Reconnect Google
-                </Button>
-              </>
-            )}
+
           </div>
         </div>
       </div>

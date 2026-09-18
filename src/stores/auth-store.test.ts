@@ -26,7 +26,7 @@ describe('useAuthStore', () => {
 
     expect(accessToken).toBe('')
     expect(expiresAt).toBeNull()
-    expect(status).toBe('unauthenticated')
+    expect(status).toBe('initializing')
     expect(user).toBeNull()
   })
 
@@ -41,10 +41,10 @@ describe('useAuthStore', () => {
 
     expect(auth.accessToken).toBe('session-token')
     expect(auth.expiresAt).toBe(expiresAt)
-    expect(auth.status).toBe('authenticated')
+    expect(auth.status).toBe('initializing')
   })
 
-  it('keeps the local user and requires Drive reconnection when a token has expired', async () => {
+  it('hydrates persisted credentials for the auth initializer to validate', async () => {
     const useAuthStore = await importAuthStore()
     useAuthStore.getState().auth.setUser({ ...sampleUser })
     useAuthStore
@@ -55,12 +55,12 @@ describe('useAuthStore', () => {
     const auth = (await importAuthStore()).getState().auth
 
     expect(auth.user).toEqual(sampleUser)
-    expect(auth.accessToken).toBe('')
-    expect(auth.expiresAt).toBeNull()
-    expect(auth.status).toBe('reconnection-required')
+    expect(auth.accessToken).toBe('expired-token')
+    expect(auth.expiresAt).not.toBeNull()
+    expect(auth.status).toBe('initializing')
   })
 
-  it('marks Drive reconnection as required when credentials are cleared for a local user', async () => {
+  it('keeps the local session authenticated when Drive credentials are cleared', async () => {
     const useAuthStore = await importAuthStore()
     useAuthStore.getState().auth.setUser({ ...sampleUser })
     useAuthStore
@@ -70,7 +70,10 @@ describe('useAuthStore', () => {
     useAuthStore.getState().auth.resetAccessToken()
 
     expect(useAuthStore.getState().auth.user).toEqual(sampleUser)
-    expect(useAuthStore.getState().auth.status).toBe('reconnection-required')
+    expect(useAuthStore.getState().auth.status).toBe('authenticated')
+    expect(useAuthStore.getState().auth.driveConnectionStatus).toBe(
+      'disconnected'
+    )
   })
 
   it('clears persisted access token and expiration together', async () => {
