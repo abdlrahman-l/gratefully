@@ -169,6 +169,11 @@ export const id = {
     lastSynced: 'Sinkronisasi terakhir: Baru saja',
     pendingBackup_other: '{{count}} catatan belum dicadangkan',
     everythingBackedUp: 'Semua data telah dicadangkan · {{date}}',
+    backUpNow: 'Cadangkan sekarang',
+    backingUp: 'Mencadangkan…',
+    backingUpJournals: 'Mencadangkan catatanmu',
+    backupInProgressDescription:
+      'Tetap buka layar ini selagi kami menyinkronkan catatanmu dengan aman ke Google Drive.',
     storageDescription:
       'Catatan syukurmu disimpan secara pribadi di Google Drive milikmu.',
     ownershipTitle: 'Datamu tetap milikmu',

@@ -111,7 +111,9 @@ export function DataSyncSection() {
                 disabled={status === 'syncing'}
                 onClick={() => void backupNow()}
               >
-                {status === 'syncing' ? 'Backing up…' : 'Back up now'}
+                {status === 'syncing'
+                  ? t('settings.backingUp')
+                  : t('settings.backUpNow')}
               </Button>
             )}
           </div>
@@ -132,11 +134,10 @@ export function DataSyncSection() {
               aria-hidden
             />
             <SheetTitle className='font-h2 text-xl text-on-surface'>
-              Backing up your journals
+              {t('settings.backingUpJournals')}
             </SheetTitle>
             <SheetDescription>
-              Please keep this screen open while we securely sync your entries
-              to Google Drive.
+              {t('settings.backupInProgressDescription')}
             </SheetDescription>
           </SheetHeader>
         </SheetContent>
