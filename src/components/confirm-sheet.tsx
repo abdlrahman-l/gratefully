@@ -17,6 +17,7 @@ type ConfirmSheetProps = {
   cancelText: ReactNode
   confirmText: ReactNode
   onConfirm: () => void
+  illustrationSrc?: string
   destructive?: boolean
   isLoading?: boolean
 }
@@ -29,6 +30,7 @@ export function ConfirmSheet({
   cancelText,
   confirmText,
   onConfirm,
+  illustrationSrc,
   destructive = false,
   isLoading = false,
 }: ConfirmSheetProps) {
@@ -44,6 +46,14 @@ export function ConfirmSheet({
         className='mx-auto max-w-md rounded-t-3xl border-outline-variant/20 px-4 pb-8'
       >
         <SheetHeader className='px-0 pt-2 text-start'>
+          {illustrationSrc && (
+            <img
+              src={illustrationSrc}
+              alt=''
+              className='mx-auto w-40'
+              aria-hidden
+            />
+          )}
           <SheetTitle className='font-h2 text-xl text-on-surface'>
             {title}
           </SheetTitle>

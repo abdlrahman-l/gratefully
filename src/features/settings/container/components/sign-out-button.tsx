@@ -34,6 +34,7 @@ export function SignOutButton() {
         cancelText={t('common.cancel')}
         confirmText={t('settings.signOut')}
         onConfirm={handleSignOut}
+        illustrationSrc='/images/logout.webp'
         destructive
       />
     </>

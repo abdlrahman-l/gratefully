@@ -124,6 +124,7 @@ export function HistoryFeed({
         confirmText={
           isRemoving ? t('grateful.removing') : t('grateful.removeConfirm')
         }
+        illustrationSrc='/images/delete.webp'
         destructive
         isLoading={isRemoving}
         onConfirm={() => void confirmRemove()}

@@ -1,11 +1,18 @@
-import { CloudIcon, ShieldCheckIcon } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
 import { getCurrentLanguage } from '@/i18n'
-import { useSync } from '@/hooks/use-sync'
 import { reconnectGoogleDrive } from '@/services/google-token.service'
+import { CloudIcon, ShieldCheckIcon } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/auth-store'
+import { useSync } from '@/hooks/use-sync'
 import { Button } from '@/components/ui/button'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import { SectionTitle } from './settings-primitives'
 
 export function DataSyncSection() {
@@ -30,11 +37,12 @@ export function DataSyncSection() {
       await sync()
     } catch (cause) {
       setReconnectError(
-        cause instanceof Error ? cause.message : 'Unable to reconnect Google Drive.'
+        cause instanceof Error
+          ? cause.message
+          : 'Unable to reconnect Google Drive.'
       )
     }
   }
-
 
   return (
     <section className='space-y-3' aria-label={t('settings.dataSync')}>
@@ -96,14 +104,44 @@ export function DataSyncSection() {
               </Button>
             )}
             {isConnected && (
-              <Button className='mt-3' size='sm' variant='outline' disabled={status === 'syncing'} onClick={() => void backupNow()}>
+              <Button
+                className='mt-3'
+                size='sm'
+                variant='outline'
+                disabled={status === 'syncing'}
+                onClick={() => void backupNow()}
+              >
                 {status === 'syncing' ? 'Backing up…' : 'Back up now'}
               </Button>
             )}
-
           </div>
         </div>
       </div>
+      <Sheet open={status === 'syncing'} onOpenChange={() => undefined}>
+        <SheetContent
+          side='bottom'
+          className='mx-auto max-w-md rounded-t-3xl border-outline-variant/20 px-4 pb-8'
+          onEscapeKeyDown={(event) => event.preventDefault()}
+          onPointerDownOutside={(event) => event.preventDefault()}
+        >
+          <SheetHeader className='items-center px-0 pt-2 text-center'>
+            <img
+              src='/images/backup.webp'
+              alt=''
+              className='w-48 animate-backup-sync motion-reduce:animate-none'
+              aria-hidden
+            />
+            <SheetTitle className='font-h2 text-xl text-on-surface'>
+              Backing up your journals
+            </SheetTitle>
+            <SheetDescription>
+              Please keep this screen open while we securely sync your entries
+              to Google Drive.
+            </SheetDescription>
+          </SheetHeader>
+        </SheetContent>
+      </Sheet>
+
       <div className='rounded-2xl border border-primary/10 bg-primary/5 p-4'>
         <div className='flex gap-3'>
           <ShieldCheckIcon
