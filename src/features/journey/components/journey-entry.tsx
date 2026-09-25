@@ -35,16 +35,13 @@ export function JourneyEntry({
   const shortDate = formatShortDate(entry.date)
 
   return (
-    <div className='flex items-start gap-3 border-b border-outline-variant/20 py-4 first:pt-0 last:border-b-0 last:pb-0'>
+    <div className='flex items-center gap-3 py-3 first:pt-0 last:pb-0'>
       <Button
         type='button'
         variant='ghost'
-        className='h-auto min-w-0 flex-1 flex-col items-start gap-1.5 rounded-xl p-0 text-start whitespace-normal hover:bg-transparent'
+        className='h-auto min-w-0 flex-1 justify-start rounded-xl p-0 text-start whitespace-normal hover:bg-transparent'
         onClick={() => onOpen(entry)}
       >
-        <p className='font-label text-sm font-medium text-outline'>
-          {shortDate}
-        </p>
         <p className='line-clamp-3 font-body-md text-sm leading-6 text-on-surface'>
           {entry.content}
         </p>
