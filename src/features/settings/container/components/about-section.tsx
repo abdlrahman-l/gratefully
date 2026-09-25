@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import { InfoIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { SectionTitle } from './settings-primitives'
@@ -17,6 +18,14 @@ export function AboutSection() {
             {t('settings.aboutGratefully')}
           </span>
         </div>
+        <div className='ml-16 border-t border-outline-variant/20' />
+        <Link to='/privacy' className='block px-4 py-4 font-label text-sm font-semibold text-foreground hover:bg-muted/60'>
+          {t('legal.privacyLink')}
+        </Link>
+        <div className='ml-16 border-t border-outline-variant/20' />
+        <Link to='/terms' className='block px-4 py-4 font-label text-sm font-semibold text-foreground hover:bg-muted/60'>
+          {t('legal.termsLink')}
+        </Link>
         <div className='ml-16 border-t border-outline-variant/20' />
         <div className='flex items-center justify-between px-4 py-4'>
           <span className='font-label text-sm font-semibold text-foreground'>

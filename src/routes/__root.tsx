@@ -14,7 +14,7 @@ export const Route = createRootRouteWithContext<{
     // Initialization is completed by RootComponent, which then invalidates the
     // router so protected routes are evaluated with a settled auth status.
     if (
-      location.pathname !== '/auth' &&
+      !['/auth', '/privacy', '/terms'].includes(location.pathname) &&
       status !== 'initializing' &&
       status !== 'authenticated'
     ) {

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { GoogleAuthButton } from './google-auth-button'
 import { LeafLogo } from './leaf-logo'
 
@@ -7,6 +8,7 @@ interface AuthViewProps {
 }
 
 export function AuthView({ onGoogleSignIn, isLoading = false }: AuthViewProps) {
+  const { t } = useTranslation()
   return (
     <div className='container flex w-full flex-1 flex-col items-center justify-center self-center text-center'>
       {/* Decorative leaf icon badge */}
@@ -29,19 +31,19 @@ export function AuthView({ onGoogleSignIn, isLoading = false }: AuthViewProps) {
 
       {/* Terms & Privacy Notice */}
       <p className='mt-14 max-w-xs text-xs leading-relaxed text-muted-foreground'>
-        By continuing, you agree to our{' '}
+        {t('legal.authNotice')}{' '}
         <a
           href='/terms'
           className='text-stone-600 underline underline-offset-2 transition-colors hover:text-foreground dark:text-stone-400'
         >
-          Terms of Service
+          {t('legal.termsLink')}
         </a>{' '}
-        and{' '}
+        {t('legal.and')}{' '}
         <a
           href='/privacy'
           className='text-stone-600 underline underline-offset-2 transition-colors hover:text-foreground dark:text-stone-400'
         >
-          Privacy Policy
+          {t('legal.privacyLink')}
         </a>
         .
       </p>
