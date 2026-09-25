@@ -3,6 +3,8 @@ import {
   calculateCurrentStreak,
   getRewardImage,
   getRewardVisualDay,
+  getNextStreakMilestone,
+  getStreakMilestoneProgress,
 } from './streak'
 
 const today = new Date(2026, 8, 14, 12)
@@ -58,5 +60,30 @@ describe('reward visual cycle', () => {
 
   it('uses day one as the safe initial image', () => {
     expect(getRewardImage(0)).toBe('/images/reward/week1-day1.png')
+  })
+})
+
+describe('streak milestones', () => {
+  it.each([
+    [0, 3],
+    [2, 3],
+    [3, 7],
+    [6, 7],
+    [7, 14],
+    [13, 14],
+    [14, 30],
+    [30, 30],
+  ])('selects the next milestone for %i days', (streak, milestone) => {
+    expect(getNextStreakMilestone(streak)).toBe(milestone)
+  })
+
+  it.each([
+    [0, 0],
+    [3, 100],
+    [7, 100],
+    [14, 100],
+    [30, 100],
+  ])('calculates milestone progress for %i days', (streak, progress) => {
+    expect(getStreakMilestoneProgress(streak)).toBe(progress)
   })
 })

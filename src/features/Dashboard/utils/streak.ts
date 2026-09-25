@@ -49,3 +49,15 @@ export function getRewardVisualDay(streak: number): number {
 export function getRewardImage(streak: number): string {
   return `/images/reward/week1-day${getRewardVisualDay(streak)}.png`
 }
+
+export function getNextStreakMilestone(streak: number): number {
+  if (streak < 3) return 3
+  if (streak < 7) return 7
+  if (streak < 14) return 14
+  return 30
+}
+
+export function getStreakMilestoneProgress(streak: number): number {
+  const nextMilestone = getNextStreakMilestone(streak)
+  return Math.min(100, Math.round((streak / nextMilestone) * 100))
+}

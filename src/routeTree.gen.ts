@@ -14,7 +14,6 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as JourneyRouteImport } from './routes/journey'
 import { Route as GratefulRouteImport } from './routes/grateful'
-import { Route as DashboardPreviewRouteImport } from './routes/dashboard-preview'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
@@ -46,11 +45,6 @@ const JourneyRoute = JourneyRouteImport.update({
 const GratefulRoute = GratefulRouteImport.update({
   id: '/grateful',
   path: '/grateful',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardPreviewRoute = DashboardPreviewRouteImport.update({
-  id: '/dashboard-preview',
-  path: '/dashboard-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -92,7 +86,6 @@ const errors401Route = errors401RouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/dashboard-preview': typeof DashboardPreviewRoute
   '/grateful': typeof GratefulRoute
   '/journey': typeof JourneyRoute
   '/privacy': typeof PrivacyRoute
@@ -107,7 +100,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/dashboard-preview': typeof DashboardPreviewRoute
   '/grateful': typeof GratefulRoute
   '/journey': typeof JourneyRoute
   '/privacy': typeof PrivacyRoute
@@ -123,7 +115,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/dashboard-preview': typeof DashboardPreviewRoute
   '/grateful': typeof GratefulRoute
   '/journey': typeof JourneyRoute
   '/privacy': typeof PrivacyRoute
@@ -140,7 +131,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
-    | '/dashboard-preview'
     | '/grateful'
     | '/journey'
     | '/privacy'
@@ -155,7 +145,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
-    | '/dashboard-preview'
     | '/grateful'
     | '/journey'
     | '/privacy'
@@ -170,7 +159,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/auth'
-    | '/dashboard-preview'
     | '/grateful'
     | '/journey'
     | '/privacy'
@@ -186,7 +174,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
-  DashboardPreviewRoute: typeof DashboardPreviewRoute
   GratefulRoute: typeof GratefulRoute
   JourneyRoute: typeof JourneyRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -234,13 +221,6 @@ declare module '@tanstack/react-router' {
       path: '/grateful'
       fullPath: '/grateful'
       preLoaderRoute: typeof GratefulRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard-preview': {
-      id: '/dashboard-preview'
-      path: '/dashboard-preview'
-      fullPath: '/dashboard-preview'
-      preLoaderRoute: typeof DashboardPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -298,7 +278,6 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
-  DashboardPreviewRoute: DashboardPreviewRoute,
   GratefulRoute: GratefulRoute,
   JourneyRoute: JourneyRoute,
   PrivacyRoute: PrivacyRoute,
