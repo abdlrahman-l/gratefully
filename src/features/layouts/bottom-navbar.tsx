@@ -18,12 +18,8 @@ const navItems: NavItem[] = [
 ]
 
 const BottomNavbar = () => {
-  const { pathname } = useLocation()
   const { t } = useTranslation()
 
-  if (pathname === '/auth') {
-    return null
-  }
 
   return (
     <nav className='fixed bottom-0 left-1/2 z-50 flex w-full max-w-md -translate-x-1/2 items-center justify-around rounded-t-2xl border-t border-outline-variant/20 bg-white px-4 py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.05)]'>

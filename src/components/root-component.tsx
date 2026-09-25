@@ -20,6 +20,9 @@ export function RootComponent() {
   const navigate = useNavigate()
   const router = useRouter()
   const authStatus = useAuthStore((state) => state.auth.status)
+  const isPublicRoute = ['/auth', '/privacy', '/terms'].includes(pathname)
+  const showAppNavigation =
+    authStatus === 'authenticated' && !isPublicRoute
   useSync()
 
   useEffect(() => {
@@ -30,15 +33,15 @@ export function RootComponent() {
     if (
       authStatus !== 'initializing' &&
       authStatus !== 'authenticated' &&
-      pathname !== '/auth'
+      !isPublicRoute
     ) {
       void navigate({ to: '/auth', replace: true })
     }
-  }, [authStatus, navigate, pathname])
+  }, [authStatus, isPublicRoute, navigate])
 
   if (
     authStatus === 'initializing' ||
-    (pathname !== '/auth' && authStatus !== 'authenticated')
+    (!isPublicRoute && authStatus !== 'authenticated')
   ) {
     return (
       <main className='mx-auto flex min-h-screen w-full max-w-md items-center justify-center'>
@@ -53,10 +56,10 @@ export function RootComponent() {
 
   return (
     <main className='mx-auto flex min-h-screen w-full max-w-md flex-col'>
-      {pathname !== '/auth' && <GreetingHeader />}
+      {showAppNavigation && <GreetingHeader />}
       <NavigationProgress />
       <Outlet />
-      <BottomNavbar />
+      {showAppNavigation && <BottomNavbar />}
       <Toaster duration={5000} />
       {import.meta.env.MODE === 'development' && (
         <>
