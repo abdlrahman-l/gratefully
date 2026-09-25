@@ -32,7 +32,7 @@ export function StreakCelebrationCard({
     >
       <div className='flex items-start gap-4'>
         <img
-          className='size-20 shrink-0 animate-streak-celebration object-contain motion-reduce:animate-none'
+          className='size-24 shrink-0 animate-streak-celebration object-contain motion-reduce:animate-none'
           src={getRewardImage(streakDays)}
           alt=''
         />

@@ -46,20 +46,20 @@ describe('calculateCurrentStreak', () => {
   })
 })
 
-describe('reward visual cycle', () => {
+describe('reward visual day', () => {
   it.each([
     [1, 1],
     [7, 7],
-    [8, 1],
-    [9, 2],
+    [8, 7],
+    [9, 7],
     [14, 7],
-    [15, 1],
+    [15, 7],
   ])('maps streak %i to visual day %i', (streak, visualDay) => {
     expect(getRewardVisualDay(streak)).toBe(visualDay)
   })
 
   it('uses day one as the safe initial image', () => {
-    expect(getRewardImage(0)).toBe('/images/reward/week1-day1.png')
+    expect(getRewardImage(0)).toBe('/images/reward/streak-day1.png')
   })
 })
 

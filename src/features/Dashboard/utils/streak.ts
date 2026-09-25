@@ -43,11 +43,11 @@ export function calculateCurrentStreak(
 
 export function getRewardVisualDay(streak: number): number {
   if (streak <= 0) return 1
-  return ((streak - 1) % 7) + 1
+  return Math.min(streak, 7)
 }
 
 export function getRewardImage(streak: number): string {
-  return `/images/reward/week1-day${getRewardVisualDay(streak)}.png`
+  return `/images/reward/streak-day${getRewardVisualDay(streak)}.png`
 }
 
 export function getNextStreakMilestone(streak: number): number {
