@@ -10,6 +10,7 @@ Setelah mengikuti panduan ini, Anda diharapkan memahami:
 - perbedaan sesi lokal Gratefully dan koneksi Google Drive;
 - alur OAuth Google Identity Services;
 - cara data lokal ditandai sebagai `pending`;
+- cara data lokal dipartisi berdasarkan akun Google yang sedang aktif;
 - perbedaan startup refresh dan backup manual;
 - format file JSON di Google Drive `appDataFolder`;
 - cara konflik, penghapusan, dan perpindahan bulan ditangani;
@@ -210,19 +211,39 @@ Baca:
 
 ```text
 Nama    : gratefully-journal
-Versi   : 2
+Versi   : 3
 Store   : entries, metadata
 ```
 
-`entries` memakai `id` sebagai key dan mempunyai index `date` non-unik. `metadata` memakai `key` sebagai key.
+`entries` memakai `id` sebagai key dan mempunyai index `date` serta `accountId`. `metadata` memakai `key` sebagai key.
+
+### 6.2 Namespace per akun
+
+Google mengirim identifier stabil bernama `sub` melalui endpoint userinfo. Di aplikasi, nilai ini disimpan sebagai `auth.user.accountNo` dan dinormalisasi menjadi namespace:
+
+```ts
+const accountId = `google:${auth.user.accountNo}`
+```
+
+Setiap entry lokal memiliki `accountId`, dan metadata sync memakai key `sync:${accountId}`. Repository IndexedDB selalu memfilter berdasarkan account yang sedang aktif sebelum membaca atau menulis data.
+
+Data `accountId` hanya untuk penyimpanan lokal. File JSON di Google Drive tidak menyimpan field ini karena `appDataFolder` sudah terisolasi oleh akun Google yang sedang memberikan token.
+
+Konsekuensinya:
+
+- account A dan account B dapat memiliki cache di browser yang sama;
+- login ulang ke account A dapat memakai cache A lagi;
+- account baru tidak melihat entry account lain;
+- data lama dari schema sebelum namespace, yang tidak memiliki owner, tidak otomatis diberikan ke account baru.
 
 `requestToPromise()` mengubah callback `IDBRequest` menjadi Promise agar repository dapat ditulis dengan `async`/`await`.
 
-### 6.2 Bentuk entry
+### 6.3 Bentuk entry
 
 ```ts
 type GratefullyEntry = {
   id: string
+  accountId: string
   date: string
   content: string
   createdAt: string
@@ -234,12 +255,13 @@ type GratefullyEntry = {
 }
 ```
 
-Bedakan field domain dan field lokal sinkronisasi:
+Bedakan field domain, ownership lokal, dan field sinkronisasi:
 
 - field yang dikirim ke Drive: `id`, `date`, `content`, `createdAt`, `updatedAt`, `deletedAt`;
+- field lokal untuk isolasi akun: `accountId`;
 - field lokal saja: `syncStatus`, `pendingMonths`, `previousDate`.
 
-### 6.3 Lifecycle entry
+### 6.4 Lifecycle entry
 
 ```mermaid
 stateDiagram-v2
@@ -252,13 +274,13 @@ stateDiagram-v2
 
 Create/update/delete selalu memanggil `markLocalChange()`. Fungsi itu memperbarui `lastLocalChangeAt` dan mengirim event `gratefully:local-change`.
 
-### 6.4 Soft delete
+### 6.5 Soft delete
 
 Delete tidak membuang record. Repository mengisi `deletedAt` dan mempertahankan record sebagai tombstone.
 
 Alasannya: perangkat lain harus menerima bukti bahwa record telah dihapus. UI normal menyembunyikan tombstone dengan memeriksa `deletedAt === null`.
 
-### 6.5 Pindah bulan
+### 6.6 Pindah bulan
 
 Jika tanggal diubah dari Agustus ke September:
 
@@ -267,7 +289,9 @@ Jika tanggal diubah dari Agustus ke September:
 - backup membuat tombstone untuk bulan lama;
 - entry aktif ditulis ke bulan baru.
 
-### 6.6 Acknowledgment aman
+### 6.7 Metadata sync per akun dan acknowledgment aman
+
+Metadata sync tidak lagi memakai satu record global. `initializeSyncMetadata()` dan `getSyncMetadata()` mencari record berdasarkan account aktif, sehingga `lastSyncedAt`, pending state, dan `remoteMonths` account A tidak memengaruhi account B.
 
 `markEntriesSynced()` hanya mengubah entry menjadi `synced` jika `updatedAt` sekarang sama dengan snapshot yang mulai di-upload.
 
@@ -494,7 +518,7 @@ Error autentikasi Drive dikembalikan ke kondisi idle/disconnected agar UI menawa
 5. **Lock hanya satu tab**, bukan cross-tab/cross-device.
 6. **Tombstone belum dibersihkan** dengan retention policy.
 7. **Data Drive belum dienkripsi client-side**.
-8. **IndexedDB belum terlihat dipartisi per akun** dalam bentuk entry; pergantian akun pada browser yang sama perlu dipikirkan dengan hati-hati.
+8. **Entry lama sebelum namespace akun tidak memiliki owner**; aplikasi tidak otomatis mengklaimnya ke account baru. Data cloud account yang benar dapat dimuat kembali melalui refresh Drive.
 9. **Backup manual berarti data pending belum aman di cloud** sampai pengguna menekan tombol dan proses berhasil.
 10. **Menghapus site data/browser sebelum backup dapat menghilangkan jurnal lokal**.
 

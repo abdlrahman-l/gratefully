@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 const entry = (overrides: Partial<GratefullyEntry> = {}): GratefullyEntry => ({
   id: 'entry-1',
+  accountId: 'google:test-account',
   date: '2026-09-14',
   content: 'Family',
   createdAt: '2026-09-14T10:00:00.000Z',
@@ -24,7 +25,7 @@ describe('Drive entry mapping', () => {
     ])
 
     expect(database.entries['2026-09-14']?.[0]).not.toHaveProperty('date')
-    expect(driveDatabaseToEntries(database)).toEqual([
+    expect(driveDatabaseToEntries(database, 'google:test-account')).toEqual([
       entry(),
       entry({ id: 'entry-2', date: '2026-09-15' }),
     ])

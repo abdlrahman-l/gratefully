@@ -2,6 +2,8 @@ export type SyncStatus = 'synced' | 'pending'
 
 export type GratefullyEntry = {
   id: string
+  /** Local ownership namespace, derived from the Google account `sub`. */
+  accountId: string
   date: string
   content: string
   createdAt: string
@@ -15,14 +17,18 @@ export type GratefullyEntry = {
   previousDate?: string | null
 }
 
-export type CreateGratefullyEntryInput = Pick<GratefullyEntry, 'date' | 'content'>
+export type CreateGratefullyEntryInput = Pick<
+  GratefullyEntry,
+  'date' | 'content'
+>
 
 export type UpdateGratefullyEntryInput = Partial<
   Pick<GratefullyEntry, 'date' | 'content'>
 >
 
 export type SyncMetadata = {
-  key: 'sync'
+  key: string
+  accountId: string
   schemaVersion: number
   lastSyncedAt: string | null
   lastLocalChangeAt: string | null

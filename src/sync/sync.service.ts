@@ -1,6 +1,6 @@
+import { getActiveAccountNamespace } from '@/db/account'
 import {
   getAllEntries,
-
   getPendingEntries,
   getMonthKey,
   markEntriesSynced,
@@ -32,7 +32,10 @@ import type { GratefullyEntry } from '@/types/gratefully'
 const METADATA_FILE_NAME = 'metadata.json'
 
 export class SyncOfflineError extends Error {
-  public constructor() { super('Cloud sync is unavailable while the browser is offline.'); this.name = 'SyncOfflineError' }
+  public constructor() {
+    super('Cloud sync is unavailable while the browser is offline.')
+    this.name = 'SyncOfflineError'
+  }
 }
 
 let activeSync: Promise<void> | null = null
@@ -42,17 +45,33 @@ function emptyRemoteMetadata(): RemoteSyncMetadata {
   return { version: 1, updatedAt: new Date().toISOString(), months: {} }
 }
 
-async function loadRemoteMetadata(): Promise<{ id: string; metadata: RemoteSyncMetadata } | null> {
+async function loadRemoteMetadata(): Promise<{
+  id: string
+  metadata: RemoteSyncMetadata
+} | null> {
   const file = await findAppDataFile(METADATA_FILE_NAME)
   if (!file) return null
-  return { id: file.id, metadata: parseRemoteSyncMetadata(await downloadJsonFile(file.id)) }
+  return {
+    id: file.id,
+    metadata: parseRemoteSyncMetadata(await downloadJsonFile(file.id)),
+  }
 }
 
-async function readRemoteMonth(month: string, metadata: RemoteSyncMetadata): Promise<{ id: string | null; entries: GratefullyEntry[] }> {
+async function readRemoteMonth(
+  month: string,
+  metadata: RemoteSyncMetadata,
+  accountId: string
+): Promise<{ id: string | null; entries: GratefullyEntry[] }> {
   if (!metadata.months[month]) return { id: null, entries: [] }
   const file = await findAppDataFile(getMonthlyFileName(month))
   if (!file) return { id: null, entries: [] }
-  return { id: file.id, entries: monthlyFileToEntries(parseMonthlyDriveFile(await downloadJsonFile(file.id), month)) }
+  return {
+    id: file.id,
+    entries: monthlyFileToEntries(
+      parseMonthlyDriveFile(await downloadJsonFile(file.id), month),
+      accountId
+    ),
+  }
 }
 
 /**
@@ -60,103 +79,181 @@ async function readRemoteMonth(month: string, metadata: RemoteSyncMetadata): Pro
  * file is deliberately retained as a Drive backup after all monthly files and
  * metadata are written, so retries are idempotent and data is never discarded.
  */
-async function migrateLegacyIfNeeded(): Promise<void> {
+async function migrateLegacyIfNeeded(accountId: string): Promise<void> {
   if (await findAppDataFile(METADATA_FILE_NAME)) return
   const legacy = await findAppDataFile(LEGACY_DATABASE_FILE_NAME)
   if (!legacy) return
 
-  const legacyEntries = driveDatabaseToEntries(parseDriveDatabase(await downloadJsonFile(legacy.id)))
-  const months = [...new Set(legacyEntries.map((entry) => getMonthKey(entry.date)))].sort()
+  const legacyEntries = driveDatabaseToEntries(
+    parseDriveDatabase(await downloadJsonFile(legacy.id)),
+    accountId
+  )
+  const months = [
+    ...new Set(legacyEntries.map((entry) => getMonthKey(entry.date))),
+  ].sort()
   const remoteMetadata = emptyRemoteMetadata()
   for (const month of months) {
     const name = getMonthlyFileName(month)
     const existing = await findAppDataFile(name)
     const existingEntries = existing
-      ? monthlyFileToEntries(parseMonthlyDriveFile(await downloadJsonFile(existing.id), month))
+      ? monthlyFileToEntries(
+          parseMonthlyDriveFile(await downloadJsonFile(existing.id), month),
+          accountId
+        )
       : []
-    const file = entriesToMonthlyDriveFile(month, mergeEntries(existingEntries, legacyEntries.filter((entry) => getMonthKey(entry.date) === month)))
-    const saved = existing ? await uploadJsonFile(existing.id, name, file) : await createJsonFile(name, file)
-    remoteMetadata.months[month] = { updatedAt: file.updatedAt || saved.modifiedTime || new Date().toISOString() }
+    const file = entriesToMonthlyDriveFile(
+      month,
+      mergeEntries(
+        existingEntries,
+        legacyEntries.filter((entry) => getMonthKey(entry.date) === month)
+      )
+    )
+    const saved = existing
+      ? await uploadJsonFile(existing.id, name, file)
+      : await createJsonFile(name, file)
+    remoteMetadata.months[month] = {
+      updatedAt:
+        file.updatedAt || saved.modifiedTime || new Date().toISOString(),
+    }
   }
   await createJsonFile(METADATA_FILE_NAME, remoteMetadata)
 }
 
 async function refreshFromDriveInternal(): Promise<void> {
   if (!navigator.onLine) throw new SyncOfflineError()
-  await migrateLegacyIfNeeded()
+  const accountId = getActiveAccountNamespace()
+  await migrateLegacyIfNeeded(accountId)
   const remote = await loadRemoteMetadata()
   if (!remote) return // A new Drive account is initialized by the first manual backup.
 
-  const localMetadata = await getSyncMetadata()
+  const localMetadata = await getSyncMetadata(accountId)
   const knownMonths = localMetadata?.remoteMonths ?? {}
   const changedMonths = Object.entries(remote.metadata.months)
     .filter(([month, value]) => knownMonths[month] !== value.updatedAt)
     .map(([month]) => month)
 
   for (const month of changedMonths) {
-    const remoteMonth = await readRemoteMonth(month, remote.metadata)
+    const remoteMonth = await readRemoteMonth(month, remote.metadata, accountId)
     // Parse/download happens before IndexedDB mutation; corrupt Drive data cannot erase local data.
     await mergeAndUpsertEntries(remoteMonth.entries)
   }
-  await updateSyncMetadata({ remoteMonths: Object.fromEntries(Object.entries(remote.metadata.months).map(([month, value]) => [month, value.updatedAt])) })
-  if (changedMonths.length) window.dispatchEvent(new Event('gratefully:sync-complete'))
+  await updateSyncMetadata(
+    {
+      remoteMonths: Object.fromEntries(
+        Object.entries(remote.metadata.months).map(([month, value]) => [
+          month,
+          value.updatedAt,
+        ])
+      ),
+    },
+    accountId
+  )
+  if (changedMonths.length)
+    window.dispatchEvent(new Event('gratefully:sync-complete'))
 }
 
 /** Background, download-only startup refresh. It never uploads user changes. */
 export function refreshFromGoogleDrive(): Promise<void> {
   if (activeRefresh) return activeRefresh
-  activeRefresh = refreshFromDriveInternal().finally(() => { activeRefresh = null })
+  activeRefresh = refreshFromDriveInternal().finally(() => {
+    activeRefresh = null
+  })
   return activeRefresh
 }
 
-function localEntriesForMonth(entries: GratefullyEntry[], month: string): GratefullyEntry[] {
+function localEntriesForMonth(
+  entries: GratefullyEntry[],
+  month: string
+): GratefullyEntry[] {
   const current = entries.filter((entry) => getMonthKey(entry.date) === month)
   const movedTombstones = entries
-    .filter((entry) => entry.syncStatus === 'pending' && entry.previousDate && getMonthKey(entry.previousDate) === month && getMonthKey(entry.date) !== month)
-    .map((entry) => ({ ...entry, date: entry.previousDate!, deletedAt: entry.updatedAt }))
+    .filter(
+      (entry) =>
+        entry.syncStatus === 'pending' &&
+        entry.previousDate &&
+        getMonthKey(entry.previousDate) === month &&
+        getMonthKey(entry.date) !== month
+    )
+    .map((entry) => ({
+      ...entry,
+      date: entry.previousDate!,
+      deletedAt: entry.updatedAt,
+    }))
   return [...current, ...movedTombstones]
 }
 
 async function performSync(): Promise<void> {
   if (!navigator.onLine) throw new SyncOfflineError()
+  const accountId = getActiveAccountNamespace()
   if (activeRefresh) await activeRefresh
-  await migrateLegacyIfNeeded()
+  await migrateLegacyIfNeeded(accountId)
 
   const pending = await getPendingEntries()
   if (!pending.length) return
-  const affectedMonths = [...new Set(pending.flatMap((entry) => entry.pendingMonths?.length ? entry.pendingMonths : [getMonthKey(entry.date)]))].sort()
-  const remote = (await loadRemoteMetadata()) ?? { id: null, metadata: emptyRemoteMetadata() }
+  const affectedMonths = [
+    ...new Set(
+      pending.flatMap((entry) =>
+        entry.pendingMonths?.length
+          ? entry.pendingMonths
+          : [getMonthKey(entry.date)]
+      )
+    ),
+  ].sort()
+  const remote = (await loadRemoteMetadata()) ?? {
+    id: null,
+    metadata: emptyRemoteMetadata(),
+  }
   const allLocal = await getAllEntries()
-  const nextMetadata: RemoteSyncMetadata = { ...remote.metadata, months: { ...remote.metadata.months } }
+  const nextMetadata: RemoteSyncMetadata = {
+    ...remote.metadata,
+    months: { ...remote.metadata.months },
+  }
 
   for (const month of affectedMonths) {
-    const remoteMonth = await readRemoteMonth(month, remote.metadata)
+    const remoteMonth = await readRemoteMonth(month, remote.metadata, accountId)
     const localMonth = localEntriesForMonth(allLocal, month)
     const merged = mergeEntries(localMonth, remoteMonth.entries)
     const file = entriesToMonthlyDriveFile(month, merged)
     const name = getMonthlyFileName(month)
-    await (remoteMonth.id ? uploadJsonFile(remoteMonth.id, name, file) : createJsonFile(name, file))
+    await (remoteMonth.id
+      ? uploadJsonFile(remoteMonth.id, name, file)
+      : createJsonFile(name, file))
     nextMetadata.months[month] = { updatedAt: file.updatedAt }
     // Persist remote winners now, but retain local pending entries until metadata succeeds.
     await upsertEntries(merged)
   }
 
-  const metadataDocument: RemoteSyncMetadata = { version: 1, updatedAt: new Date().toISOString(), months: nextMetadata.months }
-  if (remote.id) await uploadJsonFile(remote.id, METADATA_FILE_NAME, metadataDocument)
+  const metadataDocument: RemoteSyncMetadata = {
+    version: 1,
+    updatedAt: new Date().toISOString(),
+    months: nextMetadata.months,
+  }
+  if (remote.id)
+    await uploadJsonFile(remote.id, METADATA_FILE_NAME, metadataDocument)
   else await createJsonFile(METADATA_FILE_NAME, metadataDocument)
 
   await markEntriesSynced(pending)
-  await updateSyncMetadata({
-    lastSyncedAt: metadataDocument.updatedAt,
-    remoteMonths: Object.fromEntries(Object.entries(metadataDocument.months).map(([month, value]) => [month, value.updatedAt])),
-  })
+  await updateSyncMetadata(
+    {
+      lastSyncedAt: metadataDocument.updatedAt,
+      remoteMonths: Object.fromEntries(
+        Object.entries(metadataDocument.months).map(([month, value]) => [
+          month,
+          value.updatedAt,
+        ])
+      ),
+    },
+    accountId
+  )
   window.dispatchEvent(new Event('gratefully:sync-complete'))
 }
 
 /** Manual upload sync. Concurrent calls share one operation and cannot overlap. */
 export function syncNow(): Promise<void> {
   if (activeSync) return activeSync
-  activeSync = performSync().finally(() => { activeSync = null })
+  activeSync = performSync().finally(() => {
+    activeSync = null
+  })
   return activeSync
 }
 

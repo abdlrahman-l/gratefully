@@ -2,7 +2,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { getPendingCount } from '@/db/entries.repository'
 import { getSyncMetadata } from '@/db/metadata.repository'
 import { DriveServiceError } from '@/services/drive.service'
-import { SyncOfflineError, refreshFromGoogleDrive, syncNow } from '@/sync/sync.service'
+import {
+  SyncOfflineError,
+  refreshFromGoogleDrive,
+  syncNow,
+} from '@/sync/sync.service'
 import { useAuthStore } from '@/stores/auth-store'
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'offline' | 'error'
@@ -17,6 +21,7 @@ type SyncState = {
 
 export function useSync(): SyncState {
   const authStatus = useAuthStore((state) => state.auth.status)
+  const accountNo = useAuthStore((state) => state.auth.user?.accountNo)
   const driveConnectionStatus = useAuthStore(
     (state) => state.auth.driveConnectionStatus
   )
@@ -26,10 +31,18 @@ export function useSync(): SyncState {
   const [error, setError] = useState<Error | null>(null)
 
   const loadLocalState = useCallback(async () => {
-    const [metadata, count] = await Promise.all([getSyncMetadata(), getPendingCount()])
+    if (!accountNo) {
+      setLastSyncedAt(null)
+      setPendingCount(0)
+      return
+    }
+    const [metadata, count] = await Promise.all([
+      getSyncMetadata(),
+      getPendingCount(),
+    ])
     setLastSyncedAt(metadata?.lastSyncedAt ?? null)
     setPendingCount(count)
-  }, [])
+  }, [accountNo])
 
   const sync = useCallback(async () => {
     const auth = useAuthStore.getState().auth
@@ -38,7 +51,10 @@ export function useSync(): SyncState {
       auth.driveConnectionStatus !== 'connected'
     )
       return
-    if (!navigator.onLine) { setStatus('offline'); return }
+    if (!navigator.onLine) {
+      setStatus('offline')
+      return
+    }
     setStatus('syncing')
     setError(null)
     try {
@@ -46,8 +62,14 @@ export function useSync(): SyncState {
       await loadLocalState()
       setStatus('synced')
     } catch (cause) {
-      if (cause instanceof SyncOfflineError) { setStatus('offline'); return }
-      if (cause instanceof DriveServiceError && cause.code === 'AUTHENTICATION') {
+      if (cause instanceof SyncOfflineError) {
+        setStatus('offline')
+        return
+      }
+      if (
+        cause instanceof DriveServiceError &&
+        cause.code === 'AUTHENTICATION'
+      ) {
         setStatus('idle')
         return
       }
@@ -57,7 +79,11 @@ export function useSync(): SyncState {
   }, [loadLocalState])
 
   useEffect(() => {
-    const initialLoad = window.setTimeout(() => void loadLocalState(), 0)
+    const initialLoad = window.setTimeout(() => {
+      setStatus('idle')
+      setError(null)
+      void loadLocalState()
+    }, 0)
     const refresh = () => void loadLocalState()
     window.addEventListener('gratefully:local-change', refresh)
     window.addEventListener('gratefully:sync-complete', refresh)
@@ -66,7 +92,7 @@ export function useSync(): SyncState {
       window.removeEventListener('gratefully:local-change', refresh)
       window.removeEventListener('gratefully:sync-complete', refresh)
     }
-  }, [loadLocalState])
+  }, [accountNo, loadLocalState])
 
   useEffect(() => {
     if (
@@ -76,12 +102,21 @@ export function useSync(): SyncState {
     )
       return
     // Local IndexedDB has already rendered. This is intentionally download-only.
-    void refreshFromGoogleDrive().then(loadLocalState).catch((cause: unknown) => {
-      // The centralized auth layer handles invalid credentials and routing.
-      if (cause instanceof SyncOfflineError || (cause instanceof DriveServiceError && cause.code === 'AUTHENTICATION')) return
-      setError(cause instanceof Error ? cause : new Error('Cloud refresh failed.'))
-    })
-  }, [authStatus, driveConnectionStatus, loadLocalState])
+    void refreshFromGoogleDrive()
+      .then(loadLocalState)
+      .catch((cause: unknown) => {
+        // The centralized auth layer handles invalid credentials and routing.
+        if (
+          cause instanceof SyncOfflineError ||
+          (cause instanceof DriveServiceError &&
+            cause.code === 'AUTHENTICATION')
+        )
+          return
+        setError(
+          cause instanceof Error ? cause : new Error('Cloud refresh failed.')
+        )
+      })
+  }, [accountNo, authStatus, driveConnectionStatus, loadLocalState])
 
   return { status, lastSyncedAt, pendingCount, error, sync }
 }

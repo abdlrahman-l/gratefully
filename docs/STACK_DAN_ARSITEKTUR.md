@@ -292,25 +292,40 @@ Proyek menggunakan native IndexedDB API, tanpa Dexie atau `idb`.
 
 ```text
 Database name    : gratefully-journal
-Database version : 2
+Database version : 3
 ```
 
 Object store:
 
 | Store | Key path | Isi |
 | --- | --- | --- |
-| `entries` | `id` | Semua jurnal aktif, tombstone penghapusan, dan status pending. |
-| `metadata` | `key` | Metadata sinkronisasi lokal. |
+| `entries` | `id` | Semua jurnal aktif, tombstone penghapusan, dan status pending. Setiap record memiliki `accountId`. |
+| `metadata` | `key` | Metadata sinkronisasi lokal per account, dengan key seperti `sync:google:<sub>`. |
 
-Store `entries` memiliki index non-unik `date`, sehingga beberapa jurnal dapat mempunyai tanggal yang sama.
+Store `entries` memiliki index non-unik `date` dan `accountId`, sehingga beberapa jurnal dapat mempunyai tanggal yang sama dan data dapat dipartisi per account.
 
 `openDatabase()` menyimpan satu `databasePromise` agar pemanggil memakai koneksi yang sama. Saat `versionchange`, koneksi ditutup dan cache Promise dikosongkan supaya upgrade berikutnya dapat berjalan.
 
-### 6.3 Bentuk data jurnal lokal
+### 6.3 Namespace account lokal
+
+Identitas lokal account menggunakan Google `sub`, bukan email. `google-token.service.ts` menyimpan `profile.sub` sebagai `auth.user.accountNo`, kemudian `src/db/account.ts` membentuk namespace:
+
+```ts
+const accountId = `google:${auth.user.accountNo}`
+```
+
+`accountId` ditulis pada setiap entry lokal. Semua repository entry dan metadata mengambil account aktif dari auth store, lalu hanya membaca record dengan namespace yang sama. Saat account berganti di browser yang sama, cache account sebelumnya tetap tersimpan tetapi tidak ikut terbaca.
+
+Namespace ini tidak ditulis ke file Drive. Google `appDataFolder` sudah terpisah berdasarkan akun Google dari access token yang dipakai, sedangkan `accountId` diperlukan untuk mencegah cache lokal account A tercampur ke account B.
+
+Data lama dari schema sebelum namespace tidak memiliki `accountId`, sehingga tidak otomatis dianggap milik account yang sedang login. Ini adalah default yang aman untuk mencegah kebocoran data antar-account.
+
+### 6.4 Bentuk data jurnal lokal
 
 ```ts
 type GratefullyEntry = {
   id: string
+  accountId: string
   date: string
   content: string
   createdAt: string
@@ -327,6 +342,7 @@ Arti field:
 | Field | Arti |
 | --- | --- |
 | `id` | UUID stabil untuk mengenali jurnal yang sama di semua perangkat. |
+| `accountId` | Namespace lokal `google:<sub>` yang menentukan pemilik cache entry. |
 | `date` | Tanggal jurnal dengan format `YYYY-MM-DD`. |
 | `content` | Isi jurnal. |
 | `createdAt` | Waktu jurnal dibuat. |
@@ -336,9 +352,9 @@ Arti field:
 | `pendingMonths` | Daftar bulan remote yang perlu ditulis. |
 | `previousDate` | Tanggal lama jika jurnal dipindah ke bulan lain. |
 
-Tiga field terakhir yang berhubungan dengan proses lokal (`syncStatus`, `pendingMonths`, `previousDate`) tidak dikirim ke Google Drive.
+Empat field lokal (`accountId`, `syncStatus`, `pendingMonths`, `previousDate`) tidak dikirim ke Google Drive. `accountId` hanya untuk isolasi cache lokal; isolasi cloud sudah diberikan oleh `appDataFolder` akun Google.
 
-### 6.4 Create, read, update, dan delete
+### 6.5 Create, read, update, dan delete
 
 Semua operasi ada di `src/db/entries.repository.ts`.
 
@@ -372,7 +388,7 @@ Semua operasi ada di `src/db/entries.repository.ts`.
 
 Soft delete diperlukan agar perangkat lain juga tahu bahwa jurnal harus dihapus. Jika record langsung hilang secara fisik, tidak ada informasi yang dapat dikirim ke Drive.
 
-### 6.5 Mengapa pemindahan bulan lebih rumit?
+### 6.6 Mengapa pemindahan bulan lebih rumit?
 
 Misalnya jurnal awalnya bertanggal `2026-08-31`, kemudian diubah menjadi `2026-09-01`.
 
@@ -384,13 +400,14 @@ Data remote dibagi per bulan. Maka proses backup harus:
 
 Tanpa tombstone di bulan lama, jurnal lama dapat muncul kembali saat perangkat lain mengunduh file Agustus.
 
-### 6.6 Metadata sinkronisasi lokal
+### 6.7 Metadata sinkronisasi lokal
 
 Store `metadata` menyimpan satu record:
 
 ```ts
 type SyncMetadata = {
-  key: 'sync'
+  key: string
+  accountId: string
   schemaVersion: number
   lastSyncedAt: string | null
   lastLocalChangeAt: string | null
@@ -398,7 +415,7 @@ type SyncMetadata = {
 }
 ```
 
-- `lastSyncedAt`: backup manual terakhir yang selesai;
+- `lastSyncedAt`: backup manual terakhir yang selesai untuk account aktif;
 - `lastLocalChangeAt`: perubahan lokal terakhir;
 - `remoteMonths`: timestamp tiap bulan remote yang terakhir dilihat;
 - `schemaVersion`: versi bentuk metadata lokal.
@@ -748,7 +765,7 @@ Prioritas teknis yang layak dipertimbangkan:
 
 1. **Keamanan token:** pindahkan autentikasi/token exchange ke backend/BFF jika membutuhkan cookie `HttpOnly` dan refresh token yang lebih aman.
 2. **Optimistic concurrency:** gunakan Drive ETag dan `If-Match` untuk mengurangi lost update antarperangkat.
-3. **Multi-user local data:** data IndexedDB saat ini tidak memiliki `accountNo` sebagai partisi. Pastikan strategi logout/ganti akun tidak mencampur data pengguna pada browser yang sama.
+3. **Legacy local data:** record IndexedDB yang dibuat sebelum namespace akun tidak memiliki owner dan tidak otomatis diklaim account baru. Jika perlu, sediakan alur import eksplisit setelah identitas pengguna terverifikasi.
 4. **Enkripsi client-side:** enkripsi isi jurnal sebelum upload jika model privasi produk mengharuskannya.
 5. **Tombstone retention:** buat kebijakan kapan tombstone aman dihapus.
 6. **IndexedDB migration:** setiap perubahan schema harus menaikkan versi database dan menyediakan logic `onupgradeneeded`.

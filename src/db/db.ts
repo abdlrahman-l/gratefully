@@ -1,5 +1,5 @@
 const DATABASE_NAME = 'gratefully-journal'
-const DATABASE_VERSION = 2
+const DATABASE_VERSION = 3
 
 let databasePromise: Promise<IDBDatabase> | undefined
 
@@ -15,6 +15,12 @@ export function openDatabase(): Promise<IDBDatabase> {
       if (!database.objectStoreNames.contains('entries')) {
         const entries = database.createObjectStore('entries', { keyPath: 'id' })
         entries.createIndex('date', 'date', { unique: false })
+        entries.createIndex('accountId', 'accountId', { unique: false })
+      } else {
+        const entries = request.transaction?.objectStore('entries')
+        if (entries && !entries.indexNames.contains('accountId')) {
+          entries.createIndex('accountId', 'accountId', { unique: false })
+        }
       }
 
       if (!database.objectStoreNames.contains('metadata')) {
