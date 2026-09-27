@@ -28,6 +28,11 @@ export const id = {
     streakNextMilestone: 'Pencapaian berikutnya: {{count}} hari',
     keepStreak: 'Lanjutkan kebiasaan ini',
     streakTodayComplete: 'Momen hari ini sudah selesai',
+    kitabisaBanner: 'Bagikan rasa syukurmu melalui Kitabisa',
+    kitabisa: {
+      title: 'Jadikan rasa syukurmu sebagai kebaikan untuk sesama.',
+      cta: 'Kunjungi Kitabisa',
+    },
     totalGratefully: 'Total Syukur',
     thisMonth: 'Bulan Ini',
     summary: 'Ringkasan syukur',

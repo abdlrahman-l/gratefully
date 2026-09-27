@@ -28,6 +28,11 @@ export const en = {
     streakNextMilestone: 'Next milestone: {{count}} days',
     keepStreak: 'Keep this habit going',
     streakTodayComplete: 'Today’s moment is complete',
+    kitabisaBanner: 'Share your gratitude through Kitabisa',
+    kitabisa: {
+      title: 'Turn your gratitude into kindness for others.',
+      cta: 'Visit Kitabisa',
+    },
     totalGratefully: 'Total Gratefully',
     thisMonth: 'This Month',
     summary: 'Gratefully summary',

@@ -1,6 +1,7 @@
 import { StreakCelebrationCard } from '@/features/Dashboard/components/streak-celebration-card'
 import { BackupStatusCard } from '@/features/DashboardPrototype/components/backup-status-card'
 import { DashboardSummary } from '@/features/DashboardPrototype/components/dashboard-summary'
+import { KitabisaBanner } from '@/features/DashboardPrototype/components/kitabisa-banner'
 import { LatestReflectionCard } from '@/features/DashboardPrototype/components/latest-reflection-card'
 import { WeeklyPracticeCard } from '@/features/DashboardPrototype/components/weekly-practice-card'
 import { useDashboardPrototype } from '@/features/DashboardPrototype/hooks/use-dashboard-prototype'
@@ -33,6 +34,8 @@ export function DashboardPrototype() {
           streakDays={streakDays}
           todayComplete={todayComplete}
         />
+
+        <KitabisaBanner />
 
         {latestEntry && <LatestReflectionCard entry={latestEntry} />}
 
