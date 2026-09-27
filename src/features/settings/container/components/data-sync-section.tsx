@@ -26,7 +26,7 @@ export function DataSyncSection() {
   const isConnecting = driveConnectionStatus === 'connecting'
   const { status, pendingCount, lastSyncedAt, error, sync } = useSync()
 
-  const backupNow = async () => {
+  const syncNow = async () => {
     await sync()
   }
 
@@ -109,11 +109,11 @@ export function DataSyncSection() {
                 size='sm'
                 variant='outline'
                 disabled={status === 'syncing'}
-                onClick={() => void backupNow()}
+                onClick={() => void syncNow()}
               >
                 {status === 'syncing'
-                  ? t('settings.backingUp')
-                  : t('settings.backUpNow')}
+                  ? t('settings.syncing')
+                  : t('settings.syncNow')}
               </Button>
             )}
           </div>
@@ -134,10 +134,10 @@ export function DataSyncSection() {
               aria-hidden
             />
             <SheetTitle className='font-h2 text-xl text-on-surface'>
-              {t('settings.backingUpJournals')}
+              {t('settings.syncingJournals')}
             </SheetTitle>
             <SheetDescription>
-              {t('settings.backupInProgressDescription')}
+              {t('settings.syncInProgressDescription')}
             </SheetDescription>
           </SheetHeader>
         </SheetContent>

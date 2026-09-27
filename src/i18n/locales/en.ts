@@ -415,10 +415,10 @@ export const en = {
     pendingBackup_one: '{{count}} entry has not been backed up yet',
     pendingBackup_other: '{{count}} entries have not been backed up yet',
     everythingBackedUp: 'Everything is backed up · {{date}}',
-    backUpNow: 'Back up now',
-    backingUp: 'Backing up…',
-    backingUpJournals: 'Backing up your journals',
-    backupInProgressDescription:
+    syncNow: 'Sync now',
+    syncing: 'Syncing…',
+    syncingJournals: 'Syncing your journals',
+    syncInProgressDescription:
       'Please keep this screen open while we securely sync your entries to Google Drive.',
     storageDescription:
       'Your gratefully entries are privately stored in your Google Drive.',
