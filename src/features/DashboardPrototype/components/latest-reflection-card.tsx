@@ -12,7 +12,7 @@ export function LatestReflectionCard({ entry }: LatestReflectionCardProps) {
   const { t, i18n } = useTranslation()
 
   return (
-    <section className='rounded-2xl border border-primary/10 bg-primary/5 p-5'>
+    <section className='rounded-2xl shadow-ambient bg-primary/5 p-5'>
       <div className='flex items-center justify-between gap-3'>
         <div className='flex items-center gap-2 text-primary'>
           <Heart className='size-4' fill='currentColor' aria-hidden />
