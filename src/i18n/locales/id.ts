@@ -65,6 +65,59 @@ export const id = {
       backupError: 'Cadangan memerlukan perhatianmu',
     },
   },
+  landing: {
+    homeAria: 'Beranda Gratefully',
+    eyebrow: 'Jurnal syukur untuk setiap hari',
+    heroTitle: 'Berhenti sejenak. Sadari nikmatmu.',
+    heroDescription:
+      'Gratefully adalah ruang pribadi untuk mencatat hal-hal baik, menjaga kebiasaan bersyukur, dan melihat kembali perjalananmu.',
+    start: 'Mulai menulis',
+    signIn: 'Masuk',
+    noPressure: 'Satu catatan kecil sudah cukup untuk hari ini.',
+    previewAria: 'Contoh jurnal Gratefully',
+    preview: {
+      label: 'Catatan hari ini',
+      prompt: 'Nikmat apa yang kamu sadari hari ini?',
+      entry: 'Aku bersyukur bisa pulang dengan tenang dan makan malam bersama keluarga.',
+      streak: 'Kebiasaan syukur · 7 hari',
+    },
+    featuresEyebrow: 'Ruang yang mendukungmu',
+    featuresTitle: 'Sederhana untuk dijalani, berarti untuk dikenang.',
+    features: {
+      journal: {
+        title: 'Tulis momen baikmu',
+        description: 'Simpan satu atau beberapa hal yang kamu syukuri dengan catatan harian yang sederhana.',
+      },
+      habit: {
+        title: 'Rawat kebiasaan syukur',
+        description: 'Lihat konsistensimu lewat streak dan progres mingguan yang tidak menghakimi.',
+      },
+      journey: {
+        title: 'Lihat perjalananmu kembali',
+        description: 'Temukan catatan lama dan ingat kembali kebaikan-kebaikan yang pernah hadir.',
+      },
+      reminder: {
+        title: 'Dapatkan pengingat lembut',
+        description: 'Aktifkan notifikasi harian saat kamu ingin menyediakan waktu untuk berefleksi.',
+      },
+    },
+    reflection: {
+      quote: '“Jika kamu bersyukur, niscaya Aku akan menambah nikmat kepadamu.”',
+      source: 'QS. Ibrahim 14:7',
+    },
+    dataTitle: 'Catatanmu tetap milikmu.',
+    dataDescription:
+      'Gratefully dibuat untuk menjadi ruang refleksi yang personal, dengan data yang kamu kendalikan.',
+    data: {
+      local: 'Catatanmu disimpan terlebih dahulu di browser pada perangkatmu.',
+      backup: 'Kamu dapat mencadangkannya ke folder aplikasi pribadi di Google Drive milikmu.',
+    },
+    closingTitle: 'Mulai dari satu hal baik hari ini.',
+    closingDescription: 'Tidak perlu sempurna. Luangkan satu menit untuk menyadari sesuatu yang patut disyukuri.',
+    contact: 'Kontak',
+    googleDisclosure:
+      'Google Sign-In digunakan untuk mengenali akunmu dan mendukung pencadangan jurnal ke Google Drive.',
+  },
   grateful: {
     entryDate: 'Tanggal catatan',
     prompt: 'Apa satu hal baik yang terjadi hari ini?',
@@ -172,6 +225,11 @@ export const id = {
     contentLabel: 'Isi catatan syukur',
     deleteTitle: 'Hapus catatan ini?',
     deleteDescription: 'Catatan syukur yang dihapus tidak dapat dikembalikan.',
+  },
+  auth: {
+    welcome: 'Selamat datang di Gratefully',
+    subtitle: 'Temukan ketenangan dalam setiap nikmatmu.',
+    continueWithGoogle: 'Lanjutkan dengan Google',
   },
   legal: {
     authNotice: 'Dengan melanjutkan, Anda menyetujui',

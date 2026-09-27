@@ -11,7 +11,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { translationKey: 'home', to: '/', icon: Home },
+  { translationKey: 'home', to: '/home', icon: Home },
   { translationKey: 'grateful', to: '/grateful', icon: Heart },
   { translationKey: 'journey', to: '/journey', icon: BookOpen },
   { translationKey: 'settings', to: '/settings', icon: Settings },

@@ -14,7 +14,7 @@ export const AuthContainer = () => {
     try {
       await signInWithGoogle()
       toast.success('Signed in with Google')
-      navigate({ to: '/grateful' })
+      navigate({ to: '/home' })
     } catch (error) {
       toast.error(
         error instanceof Error

@@ -65,6 +65,59 @@ export const en = {
       backupError: 'Backup needs your attention',
     },
   },
+  landing: {
+    homeAria: 'Gratefully home',
+    eyebrow: 'A gratitude journal for every day',
+    heroTitle: 'Pause for a moment. Notice your blessings.',
+    heroDescription:
+      'Gratefully is a personal space to write down the good things, nurture a gratitude habit, and revisit your journey.',
+    start: 'Start writing',
+    signIn: 'Sign in',
+    noPressure: 'One small note is enough for today.',
+    previewAria: 'Gratefully journal preview',
+    preview: {
+      label: 'Today’s entry',
+      prompt: 'What is one blessing you noticed today?',
+      entry: 'I am grateful to come home peacefully and have dinner with my family.',
+      streak: 'Gratitude habit · 7 days',
+    },
+    featuresEyebrow: 'A space that supports you',
+    featuresTitle: 'Simple to live with, meaningful to remember.',
+    features: {
+      journal: {
+        title: 'Write down the good moments',
+        description: 'Save one or more things you are grateful for in a simple daily journal.',
+      },
+      habit: {
+        title: 'Nurture your gratitude habit',
+        description: 'See your consistency through non-judgmental streaks and weekly progress.',
+      },
+      journey: {
+        title: 'Revisit your journey',
+        description: 'Find older entries and remember the good things that have come into your life.',
+      },
+      reminder: {
+        title: 'Receive a gentle reminder',
+        description: 'Enable daily notifications whenever you want to make time for reflection.',
+      },
+    },
+    reflection: {
+      quote: '“If you are grateful, I will surely increase you in favor.”',
+      source: 'Qur’an 14:7',
+    },
+    dataTitle: 'Your entries remain yours.',
+    dataDescription:
+      'Gratefully is made to be a personal space for reflection, with data that stays in your control.',
+    data: {
+      local: 'Your entries are saved in your browser on this device first.',
+      backup: 'You can back them up to your private app folder in your own Google Drive.',
+    },
+    closingTitle: 'Start with one good thing today.',
+    closingDescription: 'It does not need to be perfect. Take one minute to notice something worth being grateful for.',
+    contact: 'Contact',
+    googleDisclosure:
+      'Google Sign-In is used to identify your account and support journal backups to Google Drive.',
+  },
   grateful: {
     entryDate: 'Entry date',
     prompt: 'What is one good thing that happened today?',
@@ -174,6 +227,11 @@ export const en = {
     deleteTitle: 'Delete this entry?',
     deleteDescription:
       'This gratefully entry cannot be restored after deletion.',
+  },
+  auth: {
+    welcome: 'Welcome to Gratefully',
+    subtitle: 'Find stillness in your blessings.',
+    continueWithGoogle: 'Continue with Google',
   },
   legal: {
     authNotice: 'By continuing, you agree to our',

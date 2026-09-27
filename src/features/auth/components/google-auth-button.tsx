@@ -1,4 +1,5 @@
 import { type ButtonHTMLAttributes } from 'react'
+import { useTranslation } from 'react-i18next'
 import { IconGoogle } from '@/assets/brand-icons'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -11,9 +12,12 @@ export function GoogleAuthButton({
   className,
   isLoading = false,
   disabled,
-  children = 'Continue with Google',
+  children,
   ...props
 }: GoogleAuthButtonProps) {
+  const { t } = useTranslation()
+  const label = children ?? t('auth.continueWithGoogle')
+
   return (
     <Button
       type='button'
@@ -36,7 +40,7 @@ export function GoogleAuthButton({
       ) : (
         <IconGoogle className='size-5 shrink-0 transition-transform duration-200 group-hover:scale-105' />
       )}
-      <span className='font-medium tracking-tight'>{children}</span>
+      <span className='font-medium tracking-tight'>{label}</span>
     </Button>
   )
 }

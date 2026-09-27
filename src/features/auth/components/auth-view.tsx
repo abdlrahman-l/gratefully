@@ -16,12 +16,12 @@ export function AuthView({ onGoogleSignIn, isLoading = false }: AuthViewProps) {
 
       {/* Main heading */}
       <h1 className='text-3xl font-bold tracking-tight text-foreground sm:text-4xl'>
-        Welcome to Gratefully
+        {t('auth.welcome')}
       </h1>
 
       {/* Subtitle with elegant serif quote font */}
       <p className='mt-2.5 font-quote text-base text-stone-600 italic sm:text-lg dark:text-stone-400'>
-        Find stillness in your blessings.
+        {t('auth.subtitle')}
       </p>
 
       {/* Google Login Action */}

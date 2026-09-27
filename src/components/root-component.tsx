@@ -20,7 +20,7 @@ export function RootComponent() {
   const navigate = useNavigate()
   const router = useRouter()
   const authStatus = useAuthStore((state) => state.auth.status)
-  const isPublicRoute = ['/auth', '/privacy', '/terms'].includes(pathname)
+  const isPublicRoute = ['/', '/auth', '/privacy', '/terms'].includes(pathname)
   const showAppNavigation =
     authStatus === 'authenticated' && !isPublicRoute
   useSync()

@@ -13,6 +13,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as JourneyRouteImport } from './routes/journey'
+import { Route as HomeRouteImport } from './routes/home'
 import { Route as GratefulRouteImport } from './routes/grateful'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
@@ -40,6 +41,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const JourneyRoute = JourneyRouteImport.update({
   id: '/journey',
   path: '/journey',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HomeRoute = HomeRouteImport.update({
+  id: '/home',
+  path: '/home',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GratefulRoute = GratefulRouteImport.update({
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/grateful': typeof GratefulRoute
+  '/home': typeof HomeRoute
   '/journey': typeof JourneyRoute
   '/privacy': typeof PrivacyRoute
   '/settings': typeof SettingsRoute
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/grateful': typeof GratefulRoute
+  '/home': typeof HomeRoute
   '/journey': typeof JourneyRoute
   '/privacy': typeof PrivacyRoute
   '/settings': typeof SettingsRoute
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/grateful': typeof GratefulRoute
+  '/home': typeof HomeRoute
   '/journey': typeof JourneyRoute
   '/privacy': typeof PrivacyRoute
   '/settings': typeof SettingsRoute
@@ -132,6 +141,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/grateful'
+    | '/home'
     | '/journey'
     | '/privacy'
     | '/settings'
@@ -146,6 +156,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/grateful'
+    | '/home'
     | '/journey'
     | '/privacy'
     | '/settings'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/grateful'
+    | '/home'
     | '/journey'
     | '/privacy'
     | '/settings'
@@ -175,6 +187,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   GratefulRoute: typeof GratefulRoute
+  HomeRoute: typeof HomeRoute
   JourneyRoute: typeof JourneyRoute
   PrivacyRoute: typeof PrivacyRoute
   SettingsRoute: typeof SettingsRoute
@@ -214,6 +227,13 @@ declare module '@tanstack/react-router' {
       path: '/journey'
       fullPath: '/journey'
       preLoaderRoute: typeof JourneyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/home': {
+      id: '/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof HomeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/grateful': {
@@ -279,6 +299,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   GratefulRoute: GratefulRoute,
+  HomeRoute: HomeRoute,
   JourneyRoute: JourneyRoute,
   PrivacyRoute: PrivacyRoute,
   SettingsRoute: SettingsRoute,
