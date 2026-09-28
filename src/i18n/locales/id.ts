@@ -472,6 +472,12 @@ export const id = {
     notificationsError:
       'Notifikasi belum dapat diaktifkan. Silakan coba lagi nanti.',
     connected: 'Terhubung',
+    connecting: 'Menghubungkan…',
+    disconnected: 'Terputus',
+    disconnectedStorageDescription:
+      'Catatanmu tetap tersimpan di perangkat ini. Hubungkan kembali untuk menyinkronkannya dengan Google Drive.',
+    reconnect: 'Hubungkan kembali',
+    reconnectError: 'Tidak dapat menghubungkan kembali ke Google Drive.',
     lastSynced: 'Sinkronisasi terakhir: Baru saja',
     pendingBackup_other: '{{count}} catatan belum dicadangkan',
     everythingBackedUp: 'Semua data telah dicadangkan · {{date}}',

@@ -473,6 +473,12 @@ export const en = {
     notificationsError:
       'Unable to enable notifications right now. Please try again later.',
     connected: 'Connected',
+    connecting: 'Connecting…',
+    disconnected: 'Disconnected',
+    disconnectedStorageDescription:
+      'Your journals are still saved on this device. Reconnect to sync them with Google Drive.',
+    reconnect: 'Reconnect',
+    reconnectError: 'Unable to reconnect Google Drive.',
     lastSynced: 'Last synced: Just now',
     pendingBackup_one: '{{count}} entry has not been backed up yet',
     pendingBackup_other: '{{count}} entries have not been backed up yet',

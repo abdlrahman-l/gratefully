@@ -39,7 +39,7 @@ export function DataSyncSection() {
       setReconnectError(
         cause instanceof Error
           ? cause.message
-          : 'Unable to reconnect Google Drive.'
+          : t('settings.reconnectError')
       )
     }
   }
@@ -65,16 +65,16 @@ export function DataSyncSection() {
                   aria-hidden
                 />
                 {isConnecting
-                  ? 'Connecting…'
+                  ? t('settings.connecting')
                   : isConnected
                     ? t('settings.connected')
-                    : 'Disconnected'}
+                    : t('settings.disconnected')}
               </span>
             </div>
             <p className='mt-2 font-body-md text-sm leading-6 text-muted-foreground'>
               {isConnected
                 ? t('settings.storageDescription')
-                : 'Your journals are still saved on this device. Reconnect to sync them with Google Drive.'}
+                : t('settings.disconnectedStorageDescription')}
             </p>
             <p className='mt-3 font-label text-xs font-medium text-muted-foreground'>
               {pendingCount
@@ -100,7 +100,9 @@ export function DataSyncSection() {
                 disabled={isConnecting}
                 onClick={() => void reconnect()}
               >
-                {isConnecting ? 'Connecting…' : 'Reconnect'}
+                {isConnecting
+                  ? t('settings.connecting')
+                  : t('settings.reconnect')}
               </Button>
             )}
             {isConnected && (
