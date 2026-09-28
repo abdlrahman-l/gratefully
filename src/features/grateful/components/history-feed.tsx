@@ -48,7 +48,7 @@ export function HistoryFeed({
   }
 
   return (
-    <section className='flex flex-col gap-4 pb-20 sm:gap-4 sm:pb-24'>
+    <section className='flex flex-col gap-4 sm:gap-4 pb-24'>
       <div className='flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3'>
         <h2 className='font-h2 text-base leading-tight font-semibold text-on-surface sm:text-xl'>
           {t('grateful.recentMoments')}
