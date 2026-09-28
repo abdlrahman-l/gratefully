@@ -136,6 +136,7 @@ export const id = {
     filterByDate: 'Filter berdasarkan tanggal',
     allDates: 'Semua tanggal',
     noEntries: 'Belum ada catatan syukur.',
+    entryActions: 'Aksi untuk catatan tanggal {{date}}',
     editAria: 'Edit catatan tanggal {{date}}',
     deleteAria: 'Hapus catatan tanggal {{date}}',
     removing: 'Menghapus…',

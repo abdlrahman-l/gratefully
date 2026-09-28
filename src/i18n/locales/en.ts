@@ -137,6 +137,7 @@ export const en = {
     filterByDate: 'Filter by date',
     allDates: 'All dates',
     noEntries: 'No gratefully entries yet.',
+    entryActions: 'Actions for entry from {{date}}',
     editAria: 'Edit entry from {{date}}',
     deleteAria: 'Delete entry from {{date}}',
     removing: 'Removing…',

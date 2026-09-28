@@ -1,10 +1,16 @@
 import { useState } from 'react'
 import { getCurrentLanguage } from '@/i18n'
 import type { GratefullyEntry } from '@/types/gratefully'
-import { CalendarIcon, PencilIcon, Trash2Icon } from 'lucide-react'
+import { CalendarIcon, MoreVerticalIcon, PencilIcon, Trash2Icon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { formatJournalDate } from '@/lib/date-locale'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { GratefullyEntryDeleteSheet } from '@/components/gratefully-entry-delete-sheet'
 
 interface HistoryFeedProps {
@@ -72,40 +78,38 @@ export function HistoryFeed({
                     year: 'numeric',
                   })}
                 </p>
-                <div className='flex shrink-0 gap-0 sm:gap-1'>
-                  <Button
-                    aria-label={t('grateful.editAria', {
-                      date: formatJournalDate(entry.date, language, {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                      }),
-                    })}
-                    className='size-9 sm:size-9'
-                    size='icon'
-                    type='button'
-                    variant='ghost'
-                    onClick={() => onEdit(entry)}
-                  >
-                    <PencilIcon className='size-4' />
-                  </Button>
-                  <Button
-                    aria-label={t('grateful.deleteAria', {
-                      date: formatJournalDate(entry.date, language, {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                      }),
-                    })}
-                    className='size-9 text-destructive/80 hover:bg-destructive/10 hover:text-destructive sm:size-9'
-                    size='icon'
-                    type='button'
-                    variant='ghost'
-                    onClick={() => setEntryToRemove(entry)}
-                  >
-                    <Trash2Icon className='size-4' />
-                  </Button>
-                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      aria-label={t('grateful.entryActions', {
+                        date: formatJournalDate(entry.date, language, {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        }),
+                      })}
+                      className='size-9 shrink-0 rounded-full text-outline hover:text-primary sm:size-9'
+                      size='icon'
+                      type='button'
+                      variant='ghost'
+                    >
+                      <MoreVerticalIcon className='size-5' />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align='end' className='min-w-36'>
+                    <DropdownMenuItem onSelect={() => onEdit(entry)}>
+                      <PencilIcon />
+                      {t('common.edit')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      variant='destructive'
+                      onSelect={() => setEntryToRemove(entry)}
+                    >
+                      <Trash2Icon />
+                      {t('common.delete')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
               <p className='font-body-md text-sm leading-6 wrap-break-word text-on-surface sm:text-base sm:leading-normal'>
                 {entry.content}
