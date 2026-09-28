@@ -43,8 +43,10 @@ export function StreakCelebrationCard({
               {t('home.currentStreak')}
             </span>
           </div>
-          <p className='mt-1 font-h1 text-2xl leading-none font-semibold text-primary'>
-            {t('home.streakDays', { count: streakDays })}
+          <p className='mt-1 font-h1 text-xl leading-none font-semibold text-primary'>
+            {streakDays === 0
+              ? t('home.streakNotStarted')
+              : t('home.streakDays', { count: streakDays })}
           </p>
         </div>
       </div>
@@ -54,7 +56,9 @@ export function StreakCelebrationCard({
       <div className='mt-4'>
         <div className='flex items-center justify-between gap-3'>
           <span className='font-label text-xs text-on-surface-variant'>
-            {t('home.streakNextMilestone', { count: nextMilestone })}
+            {milestoneProgress === 100
+              ? t('home.streakMilestoneComplete', { count: nextMilestone })
+              : t('home.streakNextMilestone', { count: nextMilestone })}
           </span>
           <span className='font-label text-xs font-semibold text-primary'>
             {milestoneProgress}%

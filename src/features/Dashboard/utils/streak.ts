@@ -51,9 +51,9 @@ export function getRewardImage(streak: number): string {
 }
 
 export function getNextStreakMilestone(streak: number): number {
-  if (streak < 3) return 3
-  if (streak < 7) return 7
-  if (streak < 14) return 14
+  if (streak <= 3) return 3
+  if (streak <= 7) return 7
+  if (streak <= 14) return 14
   return 30
 }
 

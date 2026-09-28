@@ -67,11 +67,14 @@ describe('streak milestones', () => {
   it.each([
     [0, 3],
     [2, 3],
-    [3, 7],
+    [3, 3],
+    [4, 7],
     [6, 7],
-    [7, 14],
+    [7, 7],
+    [8, 14],
     [13, 14],
-    [14, 30],
+    [14, 14],
+    [15, 30],
     [30, 30],
   ])('selects the next milestone for %i days', (streak, milestone) => {
     expect(getNextStreakMilestone(streak)).toBe(milestone)
