@@ -5,7 +5,7 @@ import { CalendarIcon, PencilIcon, Trash2Icon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { formatJournalDate } from '@/lib/date-locale'
 import { Button } from '@/components/ui/button'
-import { ConfirmSheet } from '@/components/confirm-sheet'
+import { GratefullyEntryDeleteSheet } from '@/components/gratefully-entry-delete-sheet'
 
 interface HistoryFeedProps {
   entries: GratefullyEntry[]
@@ -115,18 +115,11 @@ export function HistoryFeed({
         )}
       </div>
 
-      <ConfirmSheet
+      <GratefullyEntryDeleteSheet
         open={entryToRemove !== null}
-        onOpenChange={(open) => !open && setEntryToRemove(null)}
-        title={t('grateful.removeTitle')}
-        description={t('grateful.removeDescription')}
-        cancelText={t('common.cancel')}
-        confirmText={
-          isRemoving ? t('grateful.removing') : t('grateful.removeConfirm')
-        }
-        illustrationSrc='/images/delete.webp'
-        destructive
+        onClose={() => setEntryToRemove(null)}
         isLoading={isRemoving}
+        loadingText={t('grateful.removing')}
         onConfirm={() => void confirmRemove()}
       />
     </section>

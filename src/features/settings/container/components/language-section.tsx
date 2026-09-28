@@ -47,7 +47,7 @@ export function LanguageSection() {
       </div>
 
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent side='bottom' className='rounded-t-3xl px-4 pb-8'>
+        <SheetContent side='bottom' className='rounded-t-3xl px-4 pb-8 max-w-md mx-auto'>
           <SheetHeader className='px-0 pt-2'>
             <SheetTitle className='font-h2 text-lg'>
               {t('settings.chooseLanguage')}

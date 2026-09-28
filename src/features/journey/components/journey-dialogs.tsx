@@ -13,7 +13,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { Textarea } from '@/components/ui/textarea'
-import { ConfirmSheet } from '@/components/confirm-sheet'
+import { GratefullyEntryDeleteSheet } from '@/components/gratefully-entry-delete-sheet'
 import type { GratefullyEntry } from '../types'
 
 function formatLongDate(date: string) {
@@ -145,14 +145,9 @@ export function JourneyDialogs({
         </SheetContent>
       </Sheet>
 
-      <ConfirmSheet
+      <GratefullyEntryDeleteSheet
         open={deleteEntry !== null}
-        onOpenChange={(open) => !open && onCloseDelete()}
-        title={t('journey.deleteTitle')}
-        description={t('journey.deleteDescription')}
-        cancelText={t('common.cancel')}
-        confirmText={t('common.delete')}
-        destructive
+        onClose={onCloseDelete}
         onConfirm={onConfirmDelete}
       />
     </>

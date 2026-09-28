@@ -3,6 +3,9 @@ export const en = {
     cancel: 'Cancel',
     save: 'Save',
     delete: 'Delete',
+    deleteEntryTitle: 'Delete this entry?',
+    deleteEntryDescription:
+      'This gratefully entry cannot be restored after deletion.',
     edit: 'Edit',
     clear: 'Clear',
     loading: 'Loading your journal…',
@@ -136,10 +139,6 @@ export const en = {
     noEntries: 'No gratefully entries yet.',
     editAria: 'Edit entry from {{date}}',
     deleteAria: 'Delete entry from {{date}}',
-    removeTitle: 'Remove this entry?',
-    removeDescription:
-      'This gratefully entry cannot be restored after it is removed.',
-    removeConfirm: 'Remove',
     removing: 'Removing…',
     saved: 'Gratefully entry saved',
     updated: 'Gratefully entry updated',
@@ -231,9 +230,6 @@ export const en = {
     editTitle: 'Edit gratefully entry',
     editDescription: 'Update your gratefully entry for today.',
     contentLabel: 'Gratefully entry content',
-    deleteTitle: 'Delete this entry?',
-    deleteDescription:
-      'This gratefully entry cannot be restored after deletion.',
   },
   auth: {
     welcome: 'Welcome to Gratefully',

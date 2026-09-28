@@ -76,7 +76,7 @@ export function StreakCelebrationCard({
           to='/grateful'
           className='mt-4 flex min-h-11 items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 font-label text-sm font-semibold text-white shadow-md transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary'
         >
-          {t('home.keepStreak')}
+          {streakDays === 0 ? t('home.writeToday') : t('home.keepStreak')}
           <ArrowRight className='size-4' aria-hidden />
         </Link>
       )}
