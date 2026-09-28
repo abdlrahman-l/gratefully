@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { getPendingCount } from '@/db/entries.repository'
+import { getPendingEntries } from '@/db/entries.repository'
 import { getSyncMetadata } from '@/db/metadata.repository'
 import { DriveServiceError } from '@/services/drive.service'
 import {
@@ -36,12 +36,14 @@ export function useSync(): SyncState {
       setPendingCount(0)
       return
     }
-    const [metadata, count] = await Promise.all([
+    const [metadata, pendingEntries] = await Promise.all([
       getSyncMetadata(),
-      getPendingCount(),
+      getPendingEntries(),
     ])
     setLastSyncedAt(metadata?.lastSyncedAt ?? null)
-    setPendingCount(count)
+    setPendingCount(
+      pendingEntries.filter((entry) => entry.deletedAt === null).length
+    )
   }, [accountNo])
 
   const sync = useCallback(async () => {
