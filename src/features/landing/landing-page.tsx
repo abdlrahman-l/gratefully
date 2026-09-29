@@ -4,7 +4,6 @@ import {
   BellIcon,
   BookHeartIcon,
   CloudIcon,
-  HeartIcon,
   HistoryIcon,
   LockKeyholeIcon,
   QuoteIcon,
@@ -14,6 +13,7 @@ import {
 import { useTranslation } from 'react-i18next'
 import { Logo } from '@/assets/logo'
 import { Button } from '@/components/ui/button'
+import { FeaturePreviewCarousel } from '@/features/landing/feature-preview-carousel'
 import { SUPPORT_EMAIL } from '@/utils/legal'
 
 const featureIcons = [BookHeartIcon, SproutIcon, HistoryIcon, BellIcon] as const
@@ -87,30 +87,7 @@ export function LandingPage() {
         </section>
 
         <section className='px-5 pb-16' aria-label={t('landing.previewAria')}>
-          <div className='rounded-[2rem] border border-primary/10 bg-primary/5 p-4 shadow-ambient'>
-            <div className='rounded-[1.45rem] bg-surface-container-lowest p-5 shadow-sm'>
-              <div className='flex items-center justify-between'>
-                <span className='font-label text-xs font-semibold tracking-wide text-primary uppercase'>
-                  {t('landing.preview.label')}
-                </span>
-                <HeartIcon className='size-5 fill-primary text-primary' aria-hidden />
-              </div>
-              <p className='mt-5 font-quote text-[1.35rem] leading-8 text-on-surface italic'>
-                {t('landing.preview.prompt')}
-              </p>
-              <div className='mt-5 rounded-xl bg-surface-container-low px-4 py-3'>
-                <p className='font-body-md text-sm leading-6 text-on-surface-variant'>
-                  {t('landing.preview.entry')}
-                </p>
-              </div>
-              <div className='mt-5 flex items-center gap-2 border-t border-outline-variant/20 pt-4 text-primary'>
-                <SproutIcon className='size-4' aria-hidden />
-                <span className='font-label text-xs font-semibold'>
-                  {t('landing.preview.streak')}
-                </span>
-              </div>
-            </div>
-          </div>
+          <FeaturePreviewCarousel />
         </section>
 
         <section className='border-y border-outline-variant/20 bg-surface-container-low px-5 py-14'>
