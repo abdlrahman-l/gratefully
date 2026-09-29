@@ -35,7 +35,7 @@ onBackgroundMessage(messaging, (payload) => {
 
   const notification = payload.notification
 
-  if (!notification) {
+  if (!notification || payload.notification?.title || payload?.notification?.body) {
     console.warn('[SW] Payload has no notification')
     return
   }
