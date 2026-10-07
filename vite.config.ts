@@ -54,9 +54,22 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close()
 
   event.waitUntil(
-    clients.openWindow('/'),
+    clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true,
+    }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) {
+          client.navigate('/grateful')
+          return client.focus()
+        }
+      }
+
+      return clients.openWindow('/grateful')
+    })
   )
 })
+
 } else {
   console.error('[notifications] Firebase Cloud Messaging is not configured.')
 }
